@@ -1,0 +1,6 @@
+[submodule "wows-depack"]
+	path = wows-depack
+	url = git@github.com:wows-tools/wows-depack.git
+[submodule "wows-model-exporter"]
+	path = wows-model-exporter
+	url = git@github.com:wows-tools/wows-geometry.git
