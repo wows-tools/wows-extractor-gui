@@ -1,3 +1,9 @@
+.qt/
+*.glb
+*.gltf
+bin/
+*_autogen/
+
 # Prerequisites
 *.d
 
