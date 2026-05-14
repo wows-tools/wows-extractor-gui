@@ -65,6 +65,10 @@ cmake --install build
 ./build/bin/wows-extractor
 ```
 
+## License
+
+[GNU General Public License v3.0](LICENSE)
+
 ## Notes
 
 - **Game data**: you need a local World of Warships installation or copied game/res directory; the UI asks for the game/index path.

@@ -8,18 +8,25 @@
 #include <QDir>
 #include <QSettings>
 #include <QWidget>
+#include <QTimer>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), m_context(nullptr)
 {
     setupUI();
 
-    /* restore last-used game dir */
+    /* restore last-used game dir — defer so the window renders before blocking load */
     QSettings s("wows-tools", "wows-extractor-gui");
     QString saved = s.value("gameDir").toString();
     if (!saved.isEmpty()) {
         gameDirEdit->setText(saved);
-        onLoadGameDir();
+        loadStatus->setText("Loading…");
+        loadStatus->setStyleSheet("color: #888;");
+        browseButton->setEnabled(false);
+        loadButton->setEnabled(false);
+        QTimer::singleShot(0, this, &MainWindow::onLoadGameDir);
+    } else {
+        QTimer::singleShot(0, this, [this] { emit gameDataLoaded(); });
     }
 }
 
@@ -111,11 +118,21 @@ void MainWindow::onLoadGameDir()
     if (gameDir.isEmpty())
         return;
 
+    browseButton->setEnabled(false);
+    loadButton->setEnabled(false);
+
+    auto finish = [this] {
+        browseButton->setEnabled(true);
+        loadButton->setEnabled(true);
+        emit gameDataLoaded();
+    };
+
     /* find the idx directory inside the latest build */
     QString idxDir = findLatestIdxDir(gameDir);
     if (idxDir.isEmpty()) {
         loadStatus->setText("No bin/<build>/idx found");
         loadStatus->setStyleSheet("color: red;");
+        finish();
         return;
     }
 
@@ -124,6 +141,7 @@ void MainWindow::onLoadGameDir()
     if (!m_context) {
         loadStatus->setText("Context init failed");
         loadStatus->setStyleSheet("color: red;");
+        finish();
         return;
     }
 
@@ -132,6 +150,7 @@ void MainWindow::onLoadGameDir()
         loadStatus->setText(QString("Error: %1").arg(wows_error_string(ret, m_context)));
         loadStatus->setStyleSheet("color: red;");
         clearContext();
+        finish();
         return;
     }
 
@@ -147,6 +166,8 @@ void MainWindow::onLoadGameDir()
 
     /* persist for next launch */
     QSettings("wows-tools", "wows-extractor-gui").setValue("gameDir", gameDir);
+
+    finish();
 }
 
 void MainWindow::clearContext()
