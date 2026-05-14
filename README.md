@@ -22,8 +22,8 @@ The application bundles the [wows-depack](https://github.com/wows-tools/wows-dep
 This repository uses Git submodules:
 
 ```bash
-git clone --recurse-submodules <repository-url>
-cd <your-clone-directory>
+git clone --recurse-submodules https://github.com/wows-tools/wows-extractor-gui
+cd wows-extractor-gui
 ```
 
 If you already cloned without submodules:
