@@ -47,6 +47,7 @@ file(GLOB WOWS_ME_SOURCES
 add_library(wows-geometry-static STATIC ${WOWS_ME_SOURCES})
 target_include_directories(wows-geometry-static PUBLIC
     ${WOWS_ME_DIR}/inc
+    ${WOWS_DEPACK_DIR}/inc
     ${Python3_INCLUDE_DIRS}
 )
 target_link_libraries(wows-geometry-static PUBLIC
@@ -54,6 +55,8 @@ target_link_libraries(wows-geometry-static PUBLIC
     ${MESHOPTIMIZER_LIBRARY}
     ${Python3_LIBRARIES}
     ZLIB::ZLIB
+    wows-depack-static
+    ${PCRE2_LIBRARY}
     m
 )
 target_compile_options(wows-geometry-static PRIVATE -DBFD_VERSION='"0.1.0"')
