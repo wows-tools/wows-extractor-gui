@@ -68,9 +68,9 @@ void ArchiveWidget::setupUI()
     mainLayout->addWidget(progressBar);
     mainLayout->addWidget(statusLabel);
 
-    outputDirPath->setText(QSettings("wows-tools", "wows-depack-ui").value("outputDir").toString());
+    outputDirPath->setText(QSettings("wows-tools", "wows-extractor-gui").value("outputDir").toString());
     connect(outputDirPath,         &QLineEdit::editingFinished,        this, [this]() {
-        QSettings("wows-tools", "wows-depack-ui").setValue("outputDir", outputDirPath->text());
+        QSettings("wows-tools", "wows-extractor-gui").setValue("outputDir", outputDirPath->text());
     });
     connect(selectOutputDirButton, &QPushButton::clicked,             this, &ArchiveWidget::onSelectOutputDir);
     connect(extractButton,         &QPushButton::clicked,             this, &ArchiveWidget::onExtractSelected);
@@ -87,7 +87,7 @@ void ArchiveWidget::onSelectOutputDir()
     QString dir = QFileDialog::getExistingDirectory(this, "Select Output Directory");
     if (!dir.isEmpty()) {
         outputDirPath->setText(dir);
-        QSettings("wows-tools", "wows-depack-ui").setValue("outputDir", dir);
+        QSettings("wows-tools", "wows-extractor-gui").setValue("outputDir", dir);
     }
 }
 

@@ -5,8 +5,9 @@
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
-    app.setApplicationName("WoWs Ship Browser");
     app.setOrganizationName("wows-tools");
+    app.setApplicationName("wows-extractor-gui");
+    app.setApplicationDisplayName(QStringLiteral("WoWs Extractor"));
 
     /* request OpenGL ES3 for Qt Quick 3D */
     QSurfaceFormat fmt;

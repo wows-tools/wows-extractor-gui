@@ -15,7 +15,7 @@ MainWindow::MainWindow(QWidget *parent)
     setupUI();
 
     /* restore last-used game dir */
-    QSettings s("wows-tools", "wows-depack-ui");
+    QSettings s("wows-tools", "wows-extractor-gui");
     QString saved = s.value("gameDir").toString();
     if (!saved.isEmpty()) {
         gameDirEdit->setText(saved);
@@ -30,7 +30,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::setupUI()
 {
-    setWindowTitle("WoWs Ship Browser");
+    setWindowTitle(QStringLiteral("WoWs Extractor"));
     resize(1280, 800);
 
     /* ── central widget with vertical layout ── */
@@ -146,7 +146,7 @@ void MainWindow::onLoadGameDir()
     loadStatus->setStyleSheet("color: green;");
 
     /* persist for next launch */
-    QSettings("wows-tools", "wows-depack-ui").setValue("gameDir", gameDir);
+    QSettings("wows-tools", "wows-extractor-gui").setValue("gameDir", gameDir);
 }
 
 void MainWindow::clearContext()

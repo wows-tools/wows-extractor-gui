@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(wows-depack-ui VERSION 1.0.0 LANGUAGES C CXX)
+project(wows-extractor-gui VERSION 1.0.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -73,16 +73,16 @@ set(UI_SOURCES
     src/resources.qrc
 )
 
-add_executable(wows-depack-ui ${UI_SOURCES})
+add_executable(wows-extractor ${UI_SOURCES})
 
-target_include_directories(wows-depack-ui PRIVATE
+target_include_directories(wows-extractor PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${WOWS_DEPACK_DIR}/inc
     ${WOWS_ME_DIR}/inc
     ${Python3_INCLUDE_DIRS}
 )
 
-target_link_libraries(wows-depack-ui PRIVATE
+target_link_libraries(wows-extractor PRIVATE
     Qt6::Core
     Qt6::Widgets
     Qt6::Quick
@@ -97,4 +97,4 @@ target_link_libraries(wows-depack-ui PRIVATE
     pthread
 )
 
-install(TARGETS wows-depack-ui RUNTIME DESTINATION bin)
+install(TARGETS wows-extractor RUNTIME DESTINATION bin)
