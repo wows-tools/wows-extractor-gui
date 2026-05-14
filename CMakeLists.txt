@@ -93,8 +93,5 @@ target_link_libraries(wows-depack-ui PRIVATE
     dl
     pthread
 )
-# Both wows-depack and wows-model-exporter define internal helpers with the same
-# symbol name (e.g. datatoh32). Allow the linker to pick either one.
-target_link_options(wows-depack-ui PRIVATE -Wl,--allow-multiple-definition)
 
 install(TARGETS wows-depack-ui RUNTIME DESTINATION bin)

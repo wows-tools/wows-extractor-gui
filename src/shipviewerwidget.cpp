@@ -27,9 +27,13 @@ ShipViewerWidget::ShipViewerWidget(QWidget *parent)
 
 ShipViewerWidget::~ShipViewerWidget() {}
 
-void ShipViewerWidget::setArchiveContext(WOWS_CONTEXT *ctx)
+void ShipViewerWidget::setGameDirAndContext(const QString &gameDir, WOWS_CONTEXT *ctx)
 {
-    m_archiveCtx = ctx;
+    m_currentGameDir          = gameDir;
+    m_archiveCtx              = ctx;
+    m_currentGameparamsPath.clear();
+    m_currentAssetsBinPath.clear();
+    loadShips();
 }
 
 void ShipViewerWidget::setupUI()
@@ -41,20 +45,6 @@ void ShipViewerWidget::setupUI()
     leftPanel->setMinimumWidth(280);
     leftPanel->setMaximumWidth(340);
     QVBoxLayout *leftLayout = new QVBoxLayout(leftPanel);
-
-    /* game dir */
-    QGroupBox *dirGroup = new QGroupBox("Game Directory", leftPanel);
-    QVBoxLayout *dirLayout = new QVBoxLayout(dirGroup);
-    gameDirPath = new QLineEdit(dirGroup);
-    gameDirPath->setPlaceholderText("Path to extracted game content...");
-    selectGameDirButton = new QPushButton("Browse...", dirGroup);
-    loadShipsButton = new QPushButton("Load Ships", dirGroup);
-    dirLayout->addWidget(gameDirPath);
-    QHBoxLayout *dirBtnRow = new QHBoxLayout();
-    dirBtnRow->addWidget(selectGameDirButton);
-    dirBtnRow->addWidget(loadShipsButton);
-    dirLayout->addLayout(dirBtnRow);
-    leftLayout->addWidget(dirGroup);
 
     /* filters */
     QGroupBox *filterGroup = new QGroupBox("Filters", leftPanel);
@@ -101,7 +91,7 @@ void ShipViewerWidget::setupUI()
     texSizeSpin->setRange(128, 4096);
     texSizeSpin->setValue(2048);
     texSizeSpin->setSingleStep(512);
-    exportButton = new QPushButton("Export GLB...", exportGroup);
+    exportButton = new QPushButton("Export GLB…", exportGroup);
     exportLayout->addWidget(withTurretsCheck);
     exportLayout->addWidget(withTexturesCheck);
     exportLayout->addWidget(withDamageCheck);
@@ -114,7 +104,7 @@ void ShipViewerWidget::setupUI()
     progressBar = new QProgressBar(rightPanel);
     progressBar->setRange(0, 0); /* indeterminate */
     progressBar->setVisible(false);
-    statusLabel = new QLabel("Select a game directory and load ships.", rightPanel);
+    statusLabel = new QLabel("Load a game directory using the bar above.", rightPanel);
     rightLayout->addWidget(progressBar);
     rightLayout->addWidget(statusLabel);
 
@@ -128,31 +118,20 @@ void ShipViewerWidget::setupUI()
     mainLayout->setContentsMargins(0, 0, 0, 0);
 
     /* connections */
-    connect(selectGameDirButton, &QPushButton::clicked, this, &ShipViewerWidget::onSelectGameDir);
-    connect(loadShipsButton, &QPushButton::clicked, this, &ShipViewerWidget::onLoadShips);
-    connect(shipList, &QListWidget::itemDoubleClicked, this, &ShipViewerWidget::onShipSelected);
-    connect(nationFilter, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &ShipViewerWidget::onNationFilterChanged);
-    connect(typeFilter, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &ShipViewerWidget::onTypeFilterChanged);
-    connect(exportButton, &QPushButton::clicked, this, &ShipViewerWidget::onExportShip);
-    connect(searchLine, &QLineEdit::textChanged, this, &ShipViewerWidget::onSearchTextChanged);
-}
-
-void ShipViewerWidget::onSelectGameDir()
-{
-    QString dir = QFileDialog::getExistingDirectory(this, "Select Game Directory");
-    if (!dir.isEmpty())
-        gameDirPath->setText(dir);
+    connect(shipList,     &QListWidget::itemDoubleClicked,                          this, &ShipViewerWidget::onShipSelected);
+    connect(nationFilter, QOverload<int>::of(&QComboBox::currentIndexChanged),      this, &ShipViewerWidget::onNationFilterChanged);
+    connect(typeFilter,   QOverload<int>::of(&QComboBox::currentIndexChanged),      this, &ShipViewerWidget::onTypeFilterChanged);
+    connect(exportButton, &QPushButton::clicked,                                    this, &ShipViewerWidget::onExportShip);
+    connect(searchLine,   &QLineEdit::textChanged,                                  this, &ShipViewerWidget::onSearchTextChanged);
 }
 
 void ShipViewerWidget::extractGameParamsIfNeeded()
 {
-    QString gameDir = gameDirPath->text();
-    if (gameDir == m_currentGameDir && !m_currentGameparamsPath.isEmpty())
+    if (m_currentGameDir == m_currentGameDir && !m_currentGameparamsPath.isEmpty())
         return;
 
     m_currentGameparamsPath.clear();
     m_currentAssetsBinPath.clear();
-    m_currentGameDir = gameDir;
 
     if (m_archiveCtx) {
         /* extract GameParams.data from the archive to a temp file */
@@ -170,7 +149,6 @@ void ShipViewerWidget::extractGameParamsIfNeeded()
                     if (wows_extract_file_fp(m_archiveCtx, archivePath.data(), fp) == 0)
                         m_currentGameparamsPath = tf->fileName();
                     fflush(fp);
-                    /* don't fclose – QTemporaryFile owns the fd */
                 }
             }
             for (int i = 0; i < count; i++) free(results[i]);
@@ -199,19 +177,17 @@ void ShipViewerWidget::extractGameParamsIfNeeded()
         }
     } else {
         /* filesystem: find GameParams.data under gameDir */
-        std::string gp = wows_stitch_find_game_file(gameDir.toStdString(), "GameParams.data");
+        std::string gp = wows_stitch_find_game_file(m_currentGameDir.toStdString(), "GameParams.data");
         if (!gp.empty()) m_currentGameparamsPath = QString::fromStdString(gp);
-        std::string ab = wows_stitch_find_game_file(gameDir.toStdString(), "assets.bin");
+        std::string ab = wows_stitch_find_game_file(m_currentGameDir.toStdString(), "assets.bin");
         if (!ab.empty()) m_currentAssetsBinPath = QString::fromStdString(ab);
     }
 }
 
-void ShipViewerWidget::onLoadShips()
+void ShipViewerWidget::loadShips()
 {
-    if (gameDirPath->text().isEmpty() && !m_archiveCtx) {
-        QMessageBox::warning(this, "Error", "Please select a game directory or load an archive first.");
+    if (m_currentGameDir.isEmpty() && !m_archiveCtx)
         return;
-    }
 
     updateStatus("Loading ships...");
     progressBar->setVisible(true);
@@ -226,13 +202,12 @@ void ShipViewerWidget::onLoadShips()
     }
 
     m_ships.clear();
-    Py_Initialize();
+    if (!Py_IsInitialized()) Py_Initialize();
     bool ok = wows_list_ships(m_currentGameparamsPath.toUtf8().constData(), m_ships);
-    Py_Finalize();
 
     if (!ok) {
         progressBar->setVisible(false);
-        updateStatus("Failed to load ships from GameParams.data");
+        updateStatus("Failed to load ships from GameParams.data.");
         return;
     }
 
@@ -250,7 +225,7 @@ void ShipViewerWidget::onLoadShips()
     nationFilter->addItem("All Nations");
     typeFilter->addItem("All Types");
     for (const auto &n : nations) nationFilter->addItem(QString::fromStdString(n));
-    for (const auto &t : types) typeFilter->addItem(QString::fromStdString(t));
+    for (const auto &t : types)   typeFilter->addItem(QString::fromStdString(t));
     nationFilter->blockSignals(false);
     typeFilter->blockSignals(false);
 
@@ -268,17 +243,14 @@ void ShipViewerWidget::applyFilters()
 {
     shipList->clear();
     QString nationSel = nationFilter->currentIndex() > 0 ? nationFilter->currentText() : "";
-    QString typeSel = typeFilter->currentIndex() > 0 ? typeFilter->currentText() : "";
-    QString search = searchLine->text().toLower();
+    QString typeSel   = typeFilter->currentIndex()   > 0 ? typeFilter->currentText()   : "";
+    QString search    = searchLine->text().toLower();
 
     for (const auto &s : m_ships) {
-        if (!nationSel.isEmpty() && QString::fromStdString(s.nation) != nationSel)
-            continue;
-        if (!typeSel.isEmpty() && QString::fromStdString(s.type) != typeSel)
-            continue;
+        if (!nationSel.isEmpty() && QString::fromStdString(s.nation) != nationSel) continue;
+        if (!typeSel.isEmpty()   && QString::fromStdString(s.type)   != typeSel)   continue;
         QString key = QString::fromStdString(s.key);
-        if (!search.isEmpty() && !key.toLower().contains(search))
-            continue;
+        if (!search.isEmpty() && !key.toLower().contains(search)) continue;
         QString display = QString("%1 (%2, %3)")
                               .arg(key)
                               .arg(QString::fromStdString(s.nation))
@@ -289,7 +261,7 @@ void ShipViewerWidget::applyFilters()
 }
 
 void ShipViewerWidget::onNationFilterChanged() { applyFilters(); }
-void ShipViewerWidget::onTypeFilterChanged() { applyFilters(); }
+void ShipViewerWidget::onTypeFilterChanged()   { applyFilters(); }
 void ShipViewerWidget::onSearchTextChanged(const QString &) { applyFilters(); }
 
 wows_file_provider_t ShipViewerWidget::makeFileProvider()
@@ -322,14 +294,20 @@ void ShipViewerWidget::onShipSelected(QListWidgetItem *item)
 void ShipViewerWidget::loadAndDisplayShip(const std::string &shipKey)
 {
     updateStatus(QString("Loading %1...").arg(QString::fromStdString(shipKey)));
+    progressBar->setRange(0, 100);
+    progressBar->setValue(0);
     progressBar->setVisible(true);
     QApplication::processEvents();
 
     wows_ship_export_options opts;
-    opts.with_turrets = withTurretsCheck->isChecked();
-    opts.with_textures = false; /* skip textures for preview */
-    opts.exclude_damage = !withDamageCheck->isChecked();
-    opts.max_tex_size = texSizeSpin->value();
+    opts.with_turrets    = withTurretsCheck->isChecked();
+    opts.with_textures   = true;
+    opts.exclude_damage  = true;
+    opts.max_tex_size    = texSizeSpin->value();
+    opts.progress_cb     = [this](int pct) {
+        progressBar->setValue(pct);
+        QApplication::processEvents();
+    };
     if (!m_currentGameparamsPath.isEmpty())
         opts.gameparams_path = m_currentGameparamsPath.toStdString();
     if (!m_currentAssetsBinPath.isEmpty())
@@ -337,12 +315,7 @@ void ShipViewerWidget::loadAndDisplayShip(const std::string &shipKey)
 
     std::vector<uint8_t> glbData;
     bool ok = wows_stitch_export_ship_to_glb_mem(
-        m_currentGameDir.toStdString(),
-        shipKey,
-        glbData,
-        opts,
-        makeFileProvider()
-    );
+        m_currentGameDir.toStdString(), shipKey, glbData, opts, makeFileProvider());
 
     if (!ok) {
         progressBar->setVisible(false);
@@ -350,24 +323,23 @@ void ShipViewerWidget::loadAndDisplayShip(const std::string &shipKey)
         return;
     }
 
-    /* write GLB to temp file for Qt Quick 3D */
     m_tempGlb.reset(new QTemporaryFile(QDir::tempPath() + "/wows_preview_XXXXXX.glb"));
     if (!m_tempGlb->open()) {
         progressBar->setVisible(false);
-        updateStatus("Failed to create temp file for preview");
+        updateStatus("Failed to create temp file for preview.");
         return;
     }
     m_tempGlb->write(reinterpret_cast<const char *>(glbData.data()),
                      static_cast<qint64>(glbData.size()));
     m_tempGlb->flush();
-    QString glbPath = "file:///" + m_tempGlb->fileName();
+    QString glbPath = QUrl::fromLocalFile(m_tempGlb->fileName()).toString();
 
-    /* update the QML viewer */
-    if (QQuickItem *root = viewer->rootObject()) {
+    if (QQuickItem *root = viewer->rootObject())
         root->setProperty("modelSource", glbPath);
-    }
 
+    progressBar->setValue(100);
     progressBar->setVisible(false);
+    progressBar->setRange(0, 0); /* back to indeterminate for future use */
     updateStatus(QString("Displaying %1 (%2 KB)")
                      .arg(QString::fromStdString(shipKey))
                      .arg(glbData.size() / 1024));
@@ -388,27 +360,51 @@ void ShipViewerWidget::onExportShip()
     if (outPath.isEmpty()) return;
 
     updateStatus(QString("Exporting %1...").arg(QString::fromStdString(shipKey)));
+    progressBar->setRange(0, 100);
+    progressBar->setValue(0);
     progressBar->setVisible(true);
     QApplication::processEvents();
 
     wows_ship_export_options opts;
-    opts.with_turrets = withTurretsCheck->isChecked();
-    opts.with_textures = withTexturesCheck->isChecked();
-    opts.exclude_damage = !withDamageCheck->isChecked();
-    opts.max_tex_size = texSizeSpin->value();
+    opts.with_turrets    = withTurretsCheck->isChecked();
+    opts.with_textures   = withTexturesCheck->isChecked();
+    opts.exclude_damage  = !withDamageCheck->isChecked();
+    opts.max_tex_size    = texSizeSpin->value();
+    opts.progress_cb     = [this](int pct) {
+        progressBar->setValue(pct);
+        QApplication::processEvents();
+    };
     if (!m_currentGameparamsPath.isEmpty())
         opts.gameparams_path = m_currentGameparamsPath.toStdString();
     if (!m_currentAssetsBinPath.isEmpty())
         opts.wows_assets_bin_path = m_currentAssetsBinPath.toStdString();
 
-    bool ok = wows_stitch_export_ship(
-        m_currentGameDir.toStdString(), shipKey, outPath.toStdString(), opts);
+    bool ok;
+    if (m_archiveCtx) {
+        std::vector<uint8_t> glbData;
+        ok = wows_stitch_export_ship_to_glb_mem(
+            m_currentGameDir.toStdString(), shipKey, glbData, opts, makeFileProvider());
+        if (ok) {
+            FILE *f = fopen(outPath.toUtf8().constData(), "wb");
+            if (f) {
+                ok = fwrite(glbData.data(), 1, glbData.size(), f) == glbData.size();
+                fclose(f);
+            } else {
+                ok = false;
+            }
+        }
+    } else {
+        ok = wows_stitch_export_ship(
+            m_currentGameDir.toStdString(), shipKey, outPath.toStdString(), opts);
+    }
 
+    progressBar->setValue(100);
     progressBar->setVisible(false);
+    progressBar->setRange(0, 0);
     if (ok)
-        updateStatus(QString("Exported to %1").arg(outPath));
+        updateStatus(QString("Exported to %1.").arg(outPath));
     else
-        updateStatus(QString("Export failed for %1").arg(QString::fromStdString(shipKey)));
+        updateStatus(QString("Export failed for %1.").arg(QString::fromStdString(shipKey)));
 }
 
 void ShipViewerWidget::updateStatus(const QString &message)

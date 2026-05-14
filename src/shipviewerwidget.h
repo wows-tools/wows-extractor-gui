@@ -12,7 +12,6 @@
 #include <QQuickWidget>
 #include <QSplitter>
 #include <QTemporaryFile>
-#include <QTimer>
 
 #include <vector>
 #include <string>
@@ -34,11 +33,9 @@ public:
     explicit ShipViewerWidget(QWidget *parent = nullptr);
     ~ShipViewerWidget();
 
-    void setArchiveContext(WOWS_CONTEXT *ctx);
+    void setGameDirAndContext(const QString &gameDir, WOWS_CONTEXT *ctx);
 
 private slots:
-    void onSelectGameDir();
-    void onLoadShips();
     void onShipSelected(QListWidgetItem *item);
     void onNationFilterChanged();
     void onTypeFilterChanged();
@@ -47,9 +44,6 @@ private slots:
 
 private:
     /* left panel */
-    QLineEdit    *gameDirPath;
-    QPushButton  *selectGameDirButton;
-    QPushButton  *loadShipsButton;
     QLineEdit    *searchLine;
     QComboBox    *nationFilter;
     QComboBox    *typeFilter;
@@ -59,10 +53,10 @@ private:
     QQuickWidget *viewer;
 
     /* bottom: export options */
-    QCheckBox  *withTurretsCheck;
-    QCheckBox  *withTexturesCheck;
-    QCheckBox  *withDamageCheck;
-    QSpinBox   *texSizeSpin;
+    QCheckBox   *withTurretsCheck;
+    QCheckBox   *withTexturesCheck;
+    QCheckBox   *withDamageCheck;
+    QSpinBox    *texSizeSpin;
     QPushButton *exportButton;
     QProgressBar *progressBar;
     QLabel      *statusLabel;
@@ -76,6 +70,7 @@ private:
     QString m_currentAssetsBinPath;
 
     void setupUI();
+    void loadShips();
     void populateShipList();
     void applyFilters();
     void loadAndDisplayShip(const std::string &shipKey);

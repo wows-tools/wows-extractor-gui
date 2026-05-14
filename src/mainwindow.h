@@ -1,6 +1,13 @@
 #pragma once
 #include <QMainWindow>
 #include <QTabWidget>
+#include <QLineEdit>
+#include <QPushButton>
+#include <QLabel>
+
+extern "C" {
+#include "wows-depack.h"
+}
 
 class ArchiveWidget;
 class ShipViewerWidget;
@@ -12,10 +19,24 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+private slots:
+    void onBrowseGameDir();
+    void onLoadGameDir();
+
 private:
-    QTabWidget      *tabs;
-    ArchiveWidget   *archiveWidget;
+    /* global game dir bar */
+    QLineEdit    *gameDirEdit;
+    QPushButton  *browseButton;
+    QPushButton  *loadButton;
+    QLabel       *loadStatus;
+
+    QTabWidget       *tabs;
+    ArchiveWidget    *archiveWidget;
     ShipViewerWidget *shipViewerWidget;
 
+    WOWS_CONTEXT *m_context;
+
     void setupUI();
+    void clearContext();
+    static QString findLatestIdxDir(const QString &gameDir);
 };
