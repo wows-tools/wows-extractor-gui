@@ -56,6 +56,7 @@ private:
     QCheckBox   *withTurretsCheck;
     QCheckBox   *withTexturesCheck;
     QCheckBox   *withDamageCheck;
+    QComboBox   *lodLevelCombo;
     QSpinBox    *texSizeSpin;
     QPushButton *exportButton;
     QProgressBar *progressBar;

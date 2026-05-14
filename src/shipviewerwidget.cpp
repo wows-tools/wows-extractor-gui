@@ -86,7 +86,12 @@ void ShipViewerWidget::setupUI()
     withTurretsCheck->setChecked(true);
     withTexturesCheck = new QCheckBox("Textures", exportGroup);
     withTexturesCheck->setChecked(true);
-    withDamageCheck = new QCheckBox("Damage geo", exportGroup);
+    withDamageCheck = new QCheckBox("With Damaged Sections", exportGroup);
+    lodLevelCombo = new QComboBox(exportGroup);
+    lodLevelCombo->addItem("High");
+    lodLevelCombo->addItem("Mid");
+    lodLevelCombo->addItem("Low");
+    lodLevelCombo->addItem("Lower");
     texSizeSpin = new QSpinBox(exportGroup);
     texSizeSpin->setRange(128, 4096);
     texSizeSpin->setValue(2048);
@@ -95,6 +100,8 @@ void ShipViewerWidget::setupUI()
     exportLayout->addWidget(withTurretsCheck);
     exportLayout->addWidget(withTexturesCheck);
     exportLayout->addWidget(withDamageCheck);
+    exportLayout->addWidget(new QLabel("Level of Details:"));
+    exportLayout->addWidget(lodLevelCombo);
     exportLayout->addWidget(new QLabel("Max Tex:"));
     exportLayout->addWidget(texSizeSpin);
     exportLayout->addStretch();
@@ -365,10 +372,12 @@ void ShipViewerWidget::onExportShip()
     progressBar->setVisible(true);
     QApplication::processEvents();
 
+    static const int lodValues[] = {-1, 1, 2, 3};
     wows_ship_export_options opts;
     opts.with_turrets    = withTurretsCheck->isChecked();
     opts.with_textures   = withTexturesCheck->isChecked();
     opts.exclude_damage  = !withDamageCheck->isChecked();
+    opts.lod_level       = lodValues[lodLevelCombo->currentIndex()];
     opts.max_tex_size    = texSizeSpin->value();
     opts.progress_cb     = [this](int pct) {
         progressBar->setValue(pct);
