@@ -141,14 +141,12 @@ if(MSVC)
     target_compile_options(wows-geometry-static PRIVATE
         /FI "${CMAKE_CURRENT_SOURCE_DIR}/compat/win32/fmemopen.h")
 
-    # open_memstream (POSIX, unavailable on MSVC): force-include for every
-    # target that contains a caller, using target_compile_options (same
-    # pattern as fmemopen.h above) for reliable MSBuild propagation.
+    # open_memstream (POSIX, unavailable on MSVC): force-include for the two
+    # submodule targets defined above; wows-extractor gets the same flag
+    # below, after add_executable() defines it.
     target_compile_options(wows-depack-static PRIVATE
         /FI "${CMAKE_CURRENT_SOURCE_DIR}/compat/win32/open_memstream.h")
     target_compile_options(wows-geometry-static PRIVATE
-        /FI "${CMAKE_CURRENT_SOURCE_DIR}/compat/win32/open_memstream.h")
-    target_compile_options(wows-extractor PRIVATE
         /FI "${CMAKE_CURRENT_SOURCE_DIR}/compat/win32/open_memstream.h")
 endif()
 
@@ -194,6 +192,12 @@ if(UNIX AND NOT WIN32)
 endif()
 if(UNIX)
     target_link_libraries(wows-extractor PRIVATE pthread)
+endif()
+
+if(MSVC)
+    # open_memstream shim for shipviewerwidget.cpp (must come after add_executable)
+    target_compile_options(wows-extractor PRIVATE
+        /FI "${CMAKE_CURRENT_SOURCE_DIR}/compat/win32/open_memstream.h")
 endif()
 
 install(TARGETS wows-extractor RUNTIME DESTINATION bin)
