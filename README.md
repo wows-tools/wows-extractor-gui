@@ -16,7 +16,7 @@ These are some issues I might solve someday, but don't hold your breath:
 
 ## Screenshots
 
-![Resource Extractor](misc/resource_extractor.png)
+![Resource Explorer](misc/resource_extractor.png)
 
 ![3D Model Viewer / Exporter](misc/3dmodel_viewer_exporter.png)
 
@@ -81,5 +81,5 @@ cmake --install build
 
 ## Notes
 
-- **Game data**: you need a local World of Warships installation or copied game/res directory; the UI asks for the game/index path.
+- **Game data**: you need a local World of Warships installation or a copied game/res directory; the UI asks for the game installation directory (the **Game Directory** field at the top of the window).
 - **Qt Quick 3D** uses OpenGL; ensure your graphics drivers support OpenGL 3.3 Core (or the profile your Qt build targets).
