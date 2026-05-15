@@ -14,7 +14,8 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 # ── MSVC global flags ────────────────────────────────────────────────
 if(MSVC)
     # suppress POSIX-name deprecation warnings (open, close, read, …)
-    add_compile_definitions(_CRT_NONSTDC_NO_WARNINGS _CRT_SECURE_NO_WARNINGS)
+    # NOMINMAX prevents windows.h from defining min/max macros that clash with std::
+    add_compile_definitions(_CRT_NONSTDC_NO_WARNINGS _CRT_SECURE_NO_WARNINGS NOMINMAX)
     # suppress "unknown pragma" for #pragma GCC diagnostic in vendored code
     add_compile_options(/wd4068)
 endif()
@@ -111,9 +112,11 @@ if(MSVC)
     # our shims when vendored C code does #include <unistd.h> etc.
     set(WIN32_COMPAT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/compat/win32)
     foreach(tgt wows-depack-static wows-geometry-static)
+        # WIN32_COMPAT_DIR alone is enough: <linux/limits.h> resolves via the
+        # linux/ subdirectory inside it. Adding WIN32_COMPAT_DIR/linux as a
+        # separate entry would shadow MSVC's own limits.h, breaking <limits>.
         target_include_directories(${tgt} BEFORE PUBLIC
             ${WIN32_COMPAT_DIR}
-            ${WIN32_COMPAT_DIR}/linux  # for <linux/limits.h>
         )
     endforeach()
 
@@ -131,6 +134,12 @@ if(MSVC)
     target_link_libraries(wows-depack-static  PUBLIC ${MMAN_LIBRARY})
     target_link_libraries(wows-geometry-static PUBLIC ${MMAN_LIBRARY})
     # dirent (vcpkg) is header-only; no library to link, just needs the include path
+
+    # fmemopen (POSIX, unavailable on MSVC): force-include the shim for every
+    # C++ translation unit in wows-geometry-static so stitch.cpp picks it up
+    # without modifying the submodule source.
+    target_compile_options(wows-geometry-static PRIVATE
+        /FI "${CMAKE_CURRENT_SOURCE_DIR}/compat/win32/fmemopen.h")
 endif()
 
 # ── UI executable ────────────────────────────────────────────────────
