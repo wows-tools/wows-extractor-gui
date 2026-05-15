@@ -141,13 +141,24 @@ if(MSVC)
     target_compile_options(wows-geometry-static PRIVATE
         /FI "${CMAKE_CURRENT_SOURCE_DIR}/compat/win32/fmemopen.h")
 
-    # open_memstream (POSIX, unavailable on MSVC): force-include for the two
-    # submodule targets defined above; wows-extractor gets the same flag
-    # below, after add_executable() defines it.
+    # open_memstream (POSIX, unavailable on MSVC):
+    #
+    # For wows-depack-static (pure C files): /FI force-include works reliably.
     target_compile_options(wows-depack-static PRIVATE
         /FI "${CMAKE_CURRENT_SOURCE_DIR}/compat/win32/open_memstream.h")
-    target_compile_options(wows-geometry-static PRIVATE
-        /FI "${CMAKE_CURRENT_SOURCE_DIR}/compat/win32/open_memstream.h")
+    #
+    # For wows-geometry-static (C++ files that include <Python.h>): Python.h
+    # interferes with the /FI mechanism.  Instead, generate a thin wrapper for
+    # wows-depack.h that prepends open_memstream.h before the real header.
+    # ship_export.cpp includes wows-depack.h *after* Python.h, so this
+    # injection point is immune to Python.h's preprocessor side-effects.
+    set(_GEN_INC "${CMAKE_CURRENT_BINARY_DIR}/compat_gen")
+    file(WRITE "${_GEN_INC}/wows-depack.h"
+        "#pragma once\n"
+        "#include \"${CMAKE_CURRENT_SOURCE_DIR}/compat/win32/open_memstream.h\"\n"
+        "#include \"${WOWS_DEPACK_DIR}/inc/wows-depack.h\"\n"
+    )
+    target_include_directories(wows-geometry-static BEFORE PUBLIC "${_GEN_INC}")
 endif()
 
 # ── UI executable ────────────────────────────────────────────────────
@@ -192,12 +203,6 @@ if(UNIX AND NOT WIN32)
 endif()
 if(UNIX)
     target_link_libraries(wows-extractor PRIVATE pthread)
-endif()
-
-if(MSVC)
-    # open_memstream shim for shipviewerwidget.cpp (must come after add_executable)
-    target_compile_options(wows-extractor PRIVATE
-        /FI "${CMAKE_CURRENT_SOURCE_DIR}/compat/win32/open_memstream.h")
 endif()
 
 install(TARGETS wows-extractor RUNTIME DESTINATION bin)

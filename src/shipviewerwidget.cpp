@@ -1,6 +1,10 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 
+#ifdef _MSC_VER
+#  include "open_memstream.h"
+#endif
+
 #include "shipviewerwidget.h"
 
 #include <QVBoxLayout>
