@@ -42,10 +42,21 @@ endif()
 
 find_package(Python3 REQUIRED COMPONENTS Development)
 
-# TinyGLTF: try system package first, then vcpkg CONFIG package
+# TinyGLTF: try system package first, then vcpkg CONFIG package.
+# The vcpkg port is header-only and ships no CMake config file, so fall back
+# to locating tiny_gltf.h directly and synthesising an INTERFACE target.
 find_package(TinyGLTF QUIET)
 if(NOT TinyGLTF_FOUND)
     find_package(TinyGLTF CONFIG QUIET)
+endif()
+if(NOT TinyGLTF_FOUND)
+    find_path(TINYGLTF_INCLUDE_DIR tiny_gltf.h)
+    if(TINYGLTF_INCLUDE_DIR)
+        add_library(TinyGLTF::TinyGLTF INTERFACE IMPORTED)
+        set_target_properties(TinyGLTF::TinyGLTF PROPERTIES
+            INTERFACE_INCLUDE_DIRECTORIES "${TINYGLTF_INCLUDE_DIR}")
+        set(TinyGLTF_FOUND TRUE)
+    endif()
 endif()
 if(NOT TinyGLTF_FOUND)
     message(FATAL_ERROR "TinyGLTF not found (install libtinygltf-dev or vcpkg tinygltf)")
@@ -129,6 +140,9 @@ set(UI_SOURCES
     src/shipviewerwidget.cpp
     src/resources.qrc
 )
+if(MSVC)
+    list(APPEND UI_SOURCES packaging/windows/app.rc)
+endif()
 
 add_executable(wows-extractor ${UI_SOURCES})
 

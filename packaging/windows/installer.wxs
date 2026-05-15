@@ -25,6 +25,9 @@
 
     <MediaTemplate EmbedCab="yes" />
 
+    <Icon Id="AppIcon.ico" SourceFile="$(var.IconFile)" />
+    <Property Id="ARPPRODUCTICON" Value="AppIcon.ico" />
+
     <!-- ── Directory layout ───────────────────────────────────────── -->
     <Directory Id="TARGETDIR" Name="SourceDir">
       <Directory Id="ProgramFiles64Folder">
@@ -43,7 +46,9 @@
           Name="WoWS Extractor"
           Description="World of Warships Asset Extractor"
           Target="[INSTALLDIR]wows-extractor.exe"
-          WorkingDirectory="INSTALLDIR" />
+          WorkingDirectory="INSTALLDIR"
+          Icon="AppIcon.ico"
+          IconIndex="0" />
         <RemoveFolder Id="RemoveAppMenuFolder" Directory="AppMenuFolder" On="uninstall" />
         <RegistryValue
           Root="HKCU"

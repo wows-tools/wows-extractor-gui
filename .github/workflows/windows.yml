@@ -137,6 +137,7 @@ jobs:
           # Compile
           candle.exe -nologo -arch x64 -ext WixUIExtension `
             -dProductVersion="$version" `
+            "-dIconFile=${{ github.workspace }}\packaging\windows\wows-extractor.ico" `
             "$out\AppFiles.wxs" `
             "${{ github.workspace }}\packaging\windows\installer.wxs" `
             -out "$out\"
