@@ -56,7 +56,7 @@ jobs:
           host: windows
           target: desktop
           arch: win64_msvc2019_64
-          modules: qtquick3d
+          modules: qtquick3d qtshadertools
           cache: true
 
       # ── Python (needed for embedding in the app) ─────────────────
