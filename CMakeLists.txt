@@ -141,16 +141,15 @@ if(MSVC)
     target_compile_options(wows-geometry-static PRIVATE
         /FI "${CMAKE_CURRENT_SOURCE_DIR}/compat/win32/fmemopen.h")
 
-    # open_memstream (POSIX, unavailable on MSVC): force-include only for the
-    # three files that use it — to keep the fclose macro local.
-    # COMPILE_FLAGS (space-separated string) is used here because it is more
-    # reliably propagated by the MSBuild generator than COMPILE_OPTIONS lists.
-    set_source_files_properties(
-        "${WOWS_ME_DIR}/lib/ship_export.cpp"
-        "${WOWS_DEPACK_DIR}/lib/error-helpers.c"
-        "${CMAKE_CURRENT_SOURCE_DIR}/src/shipviewerwidget.cpp"
-        PROPERTIES COMPILE_FLAGS
-            "/FI${CMAKE_CURRENT_SOURCE_DIR}/compat/win32/open_memstream.h")
+    # open_memstream (POSIX, unavailable on MSVC): force-include for every
+    # target that contains a caller, using target_compile_options (same
+    # pattern as fmemopen.h above) for reliable MSBuild propagation.
+    target_compile_options(wows-depack-static PRIVATE
+        /FI "${CMAKE_CURRENT_SOURCE_DIR}/compat/win32/open_memstream.h")
+    target_compile_options(wows-geometry-static PRIVATE
+        /FI "${CMAKE_CURRENT_SOURCE_DIR}/compat/win32/open_memstream.h")
+    target_compile_options(wows-extractor PRIVATE
+        /FI "${CMAKE_CURRENT_SOURCE_DIR}/compat/win32/open_memstream.h")
 endif()
 
 # ── UI executable ────────────────────────────────────────────────────
