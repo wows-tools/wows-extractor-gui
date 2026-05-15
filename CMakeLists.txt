@@ -111,7 +111,7 @@ if(MSVC)
     if(NOT MMAN_LIBRARY)
         message(FATAL_ERROR
             "mman-win32 not found. "
-            "Add 'mman-win32' to vcpkg.json or run: vcpkg install mman-win32")
+            "Add 'mman' to vcpkg.json or run: vcpkg install mman")
     endif()
     target_link_libraries(wows-depack-static  PUBLIC ${MMAN_LIBRARY})
     target_link_libraries(wows-geometry-static PUBLIC ${MMAN_LIBRARY})

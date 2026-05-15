@@ -7,7 +7,7 @@
     "meshoptimizer",
     "tinygltf",
     {
-      "name": "mman-win32",
+      "name": "mman",
       "platform": "windows"
     },
     {
