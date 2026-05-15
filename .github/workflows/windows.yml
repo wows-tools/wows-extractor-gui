@@ -129,14 +129,18 @@ jobs:
           $out        = "${{ github.workspace }}"
 
           # Harvest all staged files
+          # -var var.SourceDir makes heat emit $(var.SourceDir)\... references
+          # instead of bare SourceDir-relative paths; candle resolves them via -dSourceDir.
           heat.exe dir $stagingBin -nologo -gg -suid `
             -dr INSTALLDIR -cg AppFiles `
+            -var var.SourceDir `
             -out "$out\AppFiles.wxs"
           if ($LASTEXITCODE -ne 0) { throw "heat.exe failed" }
 
           # Compile
           candle.exe -nologo -arch x64 -ext WixUIExtension `
             -dProductVersion="$version" `
+            -dSourceDir="$stagingBin" `
             "-dIconFile=${{ github.workspace }}\packaging\windows\wows-extractor.ico" `
             "$out\AppFiles.wxs" `
             "${{ github.workspace }}\packaging\windows\installer.wxs" `
