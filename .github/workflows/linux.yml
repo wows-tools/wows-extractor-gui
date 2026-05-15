@@ -1,0 +1,114 @@
+name: Linux Build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: '${{ github.workflow }}-${{ github.head_ref || github.ref_name }}'
+  cancel-in-progress: true
+
+env:
+  BUILD_TYPE: Release
+  QT_VERSION: '6.7.3'
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Initialize submodules
+        run: |
+          git submodule update --init wows-depack vcpkg wows-model-exporter
+          git -C wows-model-exporter submodule update --init deps/stb
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            ninja-build \
+            pkg-config \
+            libgl-dev \
+            libxkbcommon-dev \
+            libgles2-mesa-dev
+
+      # ── vcpkg binary cache (keyed on submodule HEAD + manifest) ───
+      - name: Create vcpkg cache dir
+        run: mkdir -p cache
+
+      - name: Cache vcpkg packages
+        uses: actions/cache@v4
+        with:
+          path: cache
+          key: ${{ github.workflow }}-vcpkg-${{ hashFiles('.git/modules/*/HEAD') }}-${{ hashFiles('vcpkg.json') }}
+
+      - name: Set VCPKG_DEFAULT_BINARY_CACHE
+        run: echo "VCPKG_DEFAULT_BINARY_CACHE=${{ github.workspace }}/cache" >> $GITHUB_ENV
+
+      # ── Qt (not in vcpkg — installed separately) ──────────────────
+      - name: Install Qt ${{ env.QT_VERSION }}
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          host: linux
+          target: desktop
+          arch: linux_gcc_64
+          modules: qtquick3d qtshadertools qtquicktimeline
+          cache: true
+
+      # ── Python (needed for embedding in the app) ──────────────────
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # ── CMake configure (vcpkg toolchain auto-installs packages) ──
+      - name: Configure
+        run: >
+          cmake -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+          -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
+          -DCMAKE_PREFIX_PATH="${{ env.QT_ROOT_DIR }}"
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Install to staging
+        run: cmake --install build --prefix "${{ github.workspace }}/staging"
+
+      # ── Determine version ─────────────────────────────────────────
+      - name: Determine version
+        id: version
+        run: |
+          v=$(grep -oP 'project\([^)]*VERSION\s+\K[\d.]+' CMakeLists.txt | head -1)
+          if [[ "$GITHUB_REF" =~ ^refs/tags/v(.+)$ ]]; then v="${BASH_REMATCH[1]}"; fi
+          echo "version=$v" >> $GITHUB_OUTPUT
+
+      # ── Package as tarball ────────────────────────────────────────
+      - name: Create tarball
+        run: |
+          tar czf "${{ github.workspace }}/wows-extractor-${{ steps.version.outputs.version }}-linux-x64.tar.gz" \
+            -C "${{ github.workspace }}/staging" .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wows-extractor-${{ steps.version.outputs.version }}-linux-x64
+          path: "${{ github.workspace }}/*.tar.gz"
+          if-no-files-found: error
+
+      - name: Attach to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "$GITHUB_REF_NAME" \
+            "${{ github.workspace }}/wows-extractor-${{ steps.version.outputs.version }}-linux-x64.tar.gz" \
+            --clobber
