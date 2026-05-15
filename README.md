@@ -2,7 +2,9 @@
 
 QT GUI for extracting/exporting World of Warships resource files and 3d models.
 
-The application bundles the [wows-depack](https://github.com/wows-tools/wows-depack) and [wows-geometry](https://github.com/wows-tools/wows-geometry) (`wows-model-exporter` submodule) libraries for browsing game indices, extracting files, and previewing or exporting ship geometry.
+This application, uses [wows-depack](https://github.com/wows-tools/wows-depack) and [wows-geometry](https://github.com/wows-tools/wows-geometry) (`wows-model-exporter` submodule) to enable browsing World of Warships game files.
+
+It also permits to preview 3D models of ships and export them in a the more standard `.glTF`/`.glb` format.
 
 ## Screenshots
 
