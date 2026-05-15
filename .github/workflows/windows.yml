@@ -1,0 +1,159 @@
+name: Windows Build (MSI)
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: '${{ github.workflow }}-${{ github.head_ref || github.ref_name }}'
+  cancel-in-progress: true
+
+env:
+  BUILD_TYPE: Release
+  QT_VERSION: '6.7.3'
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout (with submodules)
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      # ── vcpkg binary cache (keyed on submodule HEAD + manifest) ─────
+      - name: Create vcpkg cache dir
+        run: mkdir -Force cache
+        shell: pwsh
+
+      - name: Cache vcpkg packages
+        uses: actions/cache@v4
+        with:
+          path: cache
+          key: ${{ github.workflow }}-vcpkg-${{ hashFiles('.git/modules/*/HEAD') }}-${{ hashFiles('vcpkg.json') }}
+
+      - name: Set VCPKG_DEFAULT_BINARY_CACHE
+        run: echo "VCPKG_DEFAULT_BINARY_CACHE=${{ github.workspace }}\cache" >> $env:GITHUB_ENV
+        shell: pwsh
+
+      # ── Qt (not in vcpkg — installed separately) ─────────────────
+      - name: Install Qt ${{ env.QT_VERSION }}
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          host: windows
+          target: desktop
+          arch: win64_msvc2019_64
+          modules: qtquick3d
+          cache: true
+
+      # ── Python (needed for embedding in the app) ─────────────────
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # ── CMake configure (vcpkg toolchain auto-installs packages) ──
+      - name: Configure
+        run: >
+          cmake -B build
+          -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+          -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}\vcpkg\scripts\buildsystems\vcpkg.cmake
+          -DVCPKG_TARGET_TRIPLET=x64-windows-static-md
+          -DCMAKE_PREFIX_PATH="${{ env.QT_ROOT_DIR }}"
+        shell: pwsh
+
+      - name: Build
+        run: cmake --build build --config ${{ env.BUILD_TYPE }} --parallel
+        shell: pwsh
+
+      - name: Install to staging
+        run: cmake --install build --config ${{ env.BUILD_TYPE }} --prefix "${{ github.workspace }}\staging"
+        shell: pwsh
+
+      # ── Bundle Qt DLLs + QML modules ──────────────────────────────
+      - name: Deploy Qt runtime
+        run: |
+          windeployqt `
+            --release `
+            --no-translations `
+            --qmldir src `
+            "${{ github.workspace }}\staging\bin\wows-extractor.exe"
+        shell: pwsh
+
+      # ── Bundle Python DLL (dynamically linked even with static-md) ─
+      - name: Bundle Python DLL
+        run: |
+          $pyExec  = (Get-Command python).Source
+          $pyDir   = Split-Path $pyExec
+          $pyDll   = Get-ChildItem $pyDir -Filter "python3*.dll" |
+                       Where-Object { $_.Name -match "^python\d+\.dll$" } |
+                       Select-Object -First 1
+          if (-not $pyDll) { throw "Python DLL not found in $pyDir" }
+          Copy-Item $pyDll.FullName "${{ github.workspace }}\staging\bin\"
+          Write-Host "Bundled: $($pyDll.Name)"
+        shell: pwsh
+
+      # ── Determine version ─────────────────────────────────────────
+      - name: Determine version
+        id: version
+        run: |
+          $v = (Select-String -Path CMakeLists.txt `
+                  -Pattern 'project\([^)]*VERSION\s+([\d.]+)').Matches[0].Groups[1].Value
+          if ("${{ github.ref }}" -match '^refs/tags/v(.+)$') { $v = $Matches[1] }
+          echo "version=$v" >> $env:GITHUB_OUTPUT
+        shell: pwsh
+
+      # ── WiX MSI ──────────────────────────────────────────────────
+      - name: Create MSI
+        run: |
+          $wixBin = (Get-ChildItem "C:\Program Files (x86)\WiX Toolset*\bin" |
+                       Sort-Object Name -Descending | Select-Object -First 1).FullName
+          if (-not $wixBin) { throw "WiX Toolset not found" }
+          $env:PATH = "$wixBin;$env:PATH"
+
+          $version    = "${{ steps.version.outputs.version }}"
+          $stagingBin = "${{ github.workspace }}\staging\bin"
+          $out        = "${{ github.workspace }}"
+
+          # Harvest all staged files
+          heat.exe dir $stagingBin -nologo -gg -suid `
+            -dr INSTALLDIR -cg AppFiles `
+            -out "$out\AppFiles.wxs"
+          if ($LASTEXITCODE -ne 0) { throw "heat.exe failed" }
+
+          # Compile
+          candle.exe -nologo -arch x64 -ext WixUIExtension `
+            -dProductVersion="$version" `
+            "$out\AppFiles.wxs" `
+            "${{ github.workspace }}\packaging\windows\installer.wxs" `
+            -out "$out\"
+          if ($LASTEXITCODE -ne 0) { throw "candle.exe failed" }
+
+          # Link
+          light.exe -nologo -ext WixUIExtension -cultures:en-us `
+            "$out\AppFiles.wixobj" `
+            "$out\installer.wixobj" `
+            -out "$out\wows-extractor-${version}-win64.msi"
+          if ($LASTEXITCODE -ne 0) { throw "light.exe failed" }
+        shell: pwsh
+
+      - name: Upload MSI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wows-extractor-${{ steps.version.outputs.version }}-win64
+          path: "${{ github.workspace }}\\*.msi"
+          if-no-files-found: error
+
+      - name: Attach MSI to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $msi = Get-Item "${{ github.workspace }}\*.msi" | Select-Object -First 1
+          gh release upload "${{ github.ref_name }}" $msi.FullName --clobber
+        shell: pwsh

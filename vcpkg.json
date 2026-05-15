@@ -1,0 +1,18 @@
+{
+  "name": "wows-extractor-gui",
+  "version-string": "1.0.0",
+  "dependencies": [
+    "zlib",
+    "pcre2",
+    "meshoptimizer",
+    "tinygltf",
+    {
+      "name": "mman-win32",
+      "platform": "windows"
+    },
+    {
+      "name": "dirent",
+      "platform": "windows"
+    }
+  ]
+}
