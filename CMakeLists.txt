@@ -142,13 +142,13 @@ if(MSVC)
         /FI "${CMAKE_CURRENT_SOURCE_DIR}/compat/win32/fmemopen.h")
 
     # open_memstream (POSIX, unavailable on MSVC): force-include only for the
-    # two files that use it — ship_export.cpp (wows-geometry) and
-    # error-helpers.c (wows-depack) — to keep the fclose macro local.
+    # three files that use it — to keep the fclose macro local.
     # COMPILE_FLAGS (space-separated string) is used here because it is more
     # reliably propagated by the MSBuild generator than COMPILE_OPTIONS lists.
     set_source_files_properties(
         "${WOWS_ME_DIR}/lib/ship_export.cpp"
         "${WOWS_DEPACK_DIR}/lib/error-helpers.c"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/shipviewerwidget.cpp"
         PROPERTIES COMPILE_FLAGS
             "/FI${CMAKE_CURRENT_SOURCE_DIR}/compat/win32/open_memstream.h")
 endif()
