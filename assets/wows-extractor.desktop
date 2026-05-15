@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=WoWS Extractor
+GenericName=World of Warships Resource Extractor
+Comment=Browse and export World of Warships game files and 3D models
+Exec=wows-extractor
+Icon=wows-extractor
+Terminal=false
+Categories=Game;Utility;
+Keywords=wows;worldofwarships;extractor;3d;model;export;
