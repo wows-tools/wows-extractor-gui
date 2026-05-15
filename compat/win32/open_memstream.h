@@ -6,7 +6,11 @@
  * Strategy: back the stream with tmpfile(); intercept fclose() via macro to
  * harvest the written bytes into a malloc'd buffer before closing the temp
  * file.  Only force-include this header for source files that actually call
- * open_memstream — the fclose macro is a local blast radius.
+ * open_memstream — the fclose macro is local to those TUs.
+ *
+ * Uses #pragma push_macro/pop_macro to capture the real fclose into an inline
+ * helper before the macro shadows the name, avoiding dllimport static-
+ * initializer restrictions in MSVC.
  */
 #pragma once
 #ifdef _MSC_VER
@@ -22,8 +26,12 @@ typedef struct { FILE *f; char **bufp; size_t *szp; } _omstream_slot_t;
 static _omstream_slot_t _omstream_slots[_OMSTREAM_MAX];
 static int              _omstream_count = 0;
 
-/* Capture the real fclose address *before* the macro below shadows the name. */
-static int (*const _omstream_real_fclose)(FILE *) = fclose;
+/* Wrap the real fclose *before* the macro below shadows the name.
+ * #pragma push_macro ensures we see the CRT fclose, not our own override. */
+#pragma push_macro("fclose")
+#undef fclose
+static inline int _omstream_real_fclose(FILE *f) { return fclose(f); }
+#pragma pop_macro("fclose")
 
 static inline FILE *open_memstream(char **bufp, size_t *sizep) {
     FILE *f = tmpfile();
@@ -40,7 +48,8 @@ static inline FILE *open_memstream(char **bufp, size_t *sizep) {
 }
 
 static inline int _omstream_fclose(FILE *f) {
-    for (int i = 0; i < _omstream_count; i++) {
+    int i;
+    for (i = 0; i < _omstream_count; i++) {
         if (_omstream_slots[i].f != f)
             continue;
         long n = ftell(f);
