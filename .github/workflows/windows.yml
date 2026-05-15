@@ -20,10 +20,18 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - name: Checkout (with submodules)
+      - name: Checkout
         uses: actions/checkout@v4
-        with:
-          submodules: recursive
+
+      - name: Initialize submodules
+        # wows-model-exporter/deps/wows-depack is intentionally skipped: commit
+        # 8c24c7b contains fuzzing corpus files with colons in their names, which
+        # are illegal on Windows. The top-level wows-depack submodule is used for
+        # the build instead.
+        run: |
+          git submodule update --init wows-depack vcpkg wows-model-exporter
+          git -C wows-model-exporter submodule update --init deps/stb
+        shell: pwsh
 
       # ── vcpkg binary cache (keyed on submodule HEAD + manifest) ─────
       - name: Create vcpkg cache dir

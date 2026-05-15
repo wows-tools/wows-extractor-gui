@@ -72,6 +72,7 @@ file(GLOB WOWS_ME_SOURCES ${WOWS_ME_DIR}/lib/*.c ${WOWS_ME_DIR}/lib/*.cpp)
 add_library(wows-geometry-static STATIC ${WOWS_ME_SOURCES})
 target_include_directories(wows-geometry-static PUBLIC
     ${WOWS_ME_DIR}/inc
+    ${WOWS_ME_DIR}/deps
     ${WOWS_DEPACK_DIR}/inc
     ${Python3_INCLUDE_DIRS}
 )
