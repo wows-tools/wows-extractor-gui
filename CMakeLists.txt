@@ -98,6 +98,19 @@ target_link_libraries(wows-geometry-static PUBLIC
 )
 if(TINYGLTF_LIBRARY)
     target_link_libraries(wows-geometry-static PUBLIC ${TINYGLTF_LIBRARY})
+else()
+    # vcpkg tinygltf is header-only (no .lib); compile the implementation here.
+    # stb_image_write is already compiled in dds.cpp — use NO_INCLUDE to avoid
+    # duplicate symbols; forward-declare via the header only.
+    set(_TINYGLTF_IMPL "${CMAKE_CURRENT_BINARY_DIR}/tinygltf_impl.cpp")
+    file(WRITE "${_TINYGLTF_IMPL}"
+        "#define TINYGLTF_IMPLEMENTATION\n"
+        "#define STB_IMAGE_IMPLEMENTATION\n"
+        "#define TINYGLTF_NO_INCLUDE_STB_IMAGE_WRITE\n"
+        "#include <stb_image_write.h>\n"
+        "#include <tiny_gltf.h>\n"
+    )
+    target_sources(wows-geometry-static PRIVATE "${_TINYGLTF_IMPL}")
 endif()
 if(NOT MSVC)
     target_link_libraries(wows-geometry-static PUBLIC m)
