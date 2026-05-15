@@ -140,6 +140,13 @@ if(MSVC)
     # without modifying the submodule source.
     target_compile_options(wows-geometry-static PRIVATE
         /FI "${CMAKE_CURRENT_SOURCE_DIR}/compat/win32/fmemopen.h")
+
+    # open_memstream (POSIX, unavailable on MSVC): force-include only for
+    # ship_export.cpp (the sole caller) to keep the fclose macro local.
+    set_source_files_properties(
+        "${WOWS_ME_DIR}/lib/ship_export.cpp"
+        PROPERTIES COMPILE_OPTIONS
+            "/FI${CMAKE_CURRENT_SOURCE_DIR}/compat/win32/open_memstream.h")
 endif()
 
 # ── UI executable ────────────────────────────────────────────────────
