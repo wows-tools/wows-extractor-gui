@@ -72,7 +72,7 @@ jobs:
         run: cmake --build build --parallel
 
       - name: Install to staging
-        run: cmake --install build --prefix "${{ github.workspace }}/staging"
+        run: cmake --install build --prefix "$GITHUB_WORKSPACE/staging"
 
       - name: Determine version
         id: version
@@ -82,8 +82,8 @@ jobs:
 
       - name: Create tarball
         run: |
-          tar czf "${{ github.workspace }}/wows-extractor-${{ steps.version.outputs.version }}-linux-x64.tar.gz" \
-            -C "${{ github.workspace }}/staging" .
+          tar czf "$GITHUB_WORKSPACE/wows-extractor-${{ steps.version.outputs.version }}-linux-x64.tar.gz" \
+            -C "$GITHUB_WORKSPACE/staging" .
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -98,5 +98,5 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release upload "$GITHUB_REF_NAME" \
-            "${{ github.workspace }}/wows-extractor-${{ steps.version.outputs.version }}-linux-x64.tar.gz" \
+            "$GITHUB_WORKSPACE/wows-extractor-${{ steps.version.outputs.version }}-linux-x64.tar.gz" \
             --clobber
