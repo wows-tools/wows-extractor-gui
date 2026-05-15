@@ -53,6 +53,11 @@ typedef unsigned short mode_t;
 #  define S_ISLNK(m)  0
 #endif
 
+/* POSIX mkdir(path, mode) — Windows _mkdir takes no mode argument */
+#ifndef mkdir
+#  define mkdir(path, mode) _mkdir(path)
+#endif
+
 /* realpath: MSVC equivalent is _fullpath */
 static inline char *realpath(const char *path, char *resolved)
 {

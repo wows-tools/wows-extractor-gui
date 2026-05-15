@@ -117,13 +117,17 @@ if(MSVC)
         )
     endforeach()
 
-    # mman-win32 (vcpkg) provides sys/mman.h + mman.lib
+    # mman-win32 (vcpkg) provides sys/mman.h under include/mman/sys/mman.h
+    # (non-standard path; find_path + PATH_SUFFIXES is required per the port's usage file)
     find_library(MMAN_LIBRARY NAMES mman)
-    if(NOT MMAN_LIBRARY)
+    find_path(MMAN_INCLUDE_DIR NAMES sys/mman.h PATH_SUFFIXES mman)
+    if(NOT MMAN_LIBRARY OR NOT MMAN_INCLUDE_DIR)
         message(FATAL_ERROR
             "mman-win32 not found. "
             "Add 'mman' to vcpkg.json or run: vcpkg install mman")
     endif()
+    target_include_directories(wows-depack-static  PUBLIC ${MMAN_INCLUDE_DIR})
+    target_include_directories(wows-geometry-static PUBLIC ${MMAN_INCLUDE_DIR})
     target_link_libraries(wows-depack-static  PUBLIC ${MMAN_LIBRARY})
     target_link_libraries(wows-geometry-static PUBLIC ${MMAN_LIBRARY})
     # dirent (vcpkg) is header-only; no library to link, just needs the include path
