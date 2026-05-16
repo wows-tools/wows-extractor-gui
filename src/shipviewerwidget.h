@@ -25,42 +25,41 @@ extern "C" {
 #include "wows-model-exporter.h"
 #include "wows-game-params.h"
 
-class ShipViewerWidget : public QWidget
-{
+class ShipViewerWidget : public QWidget {
     Q_OBJECT
 
-public:
+  public:
     explicit ShipViewerWidget(QWidget *parent = nullptr);
     ~ShipViewerWidget();
 
     void setGameDirAndContext(const QString &gameDir, WOWS_CONTEXT *ctx);
 
-private slots:
+  private slots:
     void onShipSelected(QListWidgetItem *item);
     void onNationFilterChanged();
     void onTypeFilterChanged();
     void onExportShip();
     void onSearchTextChanged(const QString &text);
 
-private:
+  private:
     /* left panel */
-    QLineEdit    *searchLine;
-    QComboBox    *nationFilter;
-    QComboBox    *typeFilter;
-    QListWidget  *shipList;
+    QLineEdit *searchLine;
+    QComboBox *nationFilter;
+    QComboBox *typeFilter;
+    QListWidget *shipList;
 
     /* right panel: 3D viewer */
     QQuickWidget *viewer;
 
     /* bottom: export options */
-    QCheckBox   *withTurretsCheck;
-    QCheckBox   *withTexturesCheck;
-    QCheckBox   *withDamageCheck;
-    QComboBox   *lodLevelCombo;
-    QSpinBox    *texSizeSpin;
+    QCheckBox *withTurretsCheck;
+    QCheckBox *withTexturesCheck;
+    QCheckBox *withDamageCheck;
+    QComboBox *lodLevelCombo;
+    QSpinBox *texSizeSpin;
     QPushButton *exportButton;
     QProgressBar *progressBar;
-    QLabel      *statusLabel;
+    QLabel *statusLabel;
 
     /* state */
     WOWS_CONTEXT *m_archiveCtx;

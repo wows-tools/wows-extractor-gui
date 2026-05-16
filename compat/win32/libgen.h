@@ -10,8 +10,7 @@
  * dirname: strip the last component of a path, modifying the string in place
  * and returning a pointer into it — same contract as POSIX dirname(3).
  */
-static inline char *dirname(char *path)
-{
+static inline char *dirname(char *path) {
     static char dot[] = ".";
     if (!path || *path == '\0')
         return dot;
@@ -28,9 +27,9 @@ static inline char *dirname(char *path)
             sep = p;
 
     if (!sep)
-        return dot;              /* no separator: directory is "." */
+        return dot; /* no separator: directory is "." */
     if (sep == path) {
-        path[1] = '\0';          /* root: return "/" or "\" */
+        path[1] = '\0'; /* root: return "/" or "\" */
         return path;
     }
     *sep = '\0';
@@ -40,8 +39,7 @@ static inline char *dirname(char *path)
 /*
  * basename: return the last path component (pointer into the original string).
  */
-static inline char *basename(char *path)
-{
+static inline char *basename(char *path) {
     static char dot[] = ".";
     if (!path || *path == '\0')
         return dot;

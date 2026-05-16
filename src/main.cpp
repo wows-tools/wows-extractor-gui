@@ -5,8 +5,7 @@
 #include <QFont>
 #include "mainwindow.h"
 
-static QPixmap makeSplashPixmap()
-{
+static QPixmap makeSplashPixmap() {
     QPixmap pm(480, 220);
     pm.fill(QColor(0x1a, 0x2a, 0x3a));
     QPainter p(&pm);
@@ -27,8 +26,7 @@ static QPixmap makeSplashPixmap()
     return pm;
 }
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
     app.setOrganizationName("wows-tools");
     app.setApplicationName("wows-extractor-gui");

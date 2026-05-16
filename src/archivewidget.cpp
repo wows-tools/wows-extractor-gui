@@ -11,13 +11,11 @@
 #include <QIcon>
 
 ArchiveWidget::ArchiveWidget(QWidget *parent)
-    : QWidget(parent), m_context(nullptr), m_stopRequested(false), m_extracting(false)
-{
+    : QWidget(parent), m_context(nullptr), m_stopRequested(false), m_extracting(false) {
     setupUI();
 }
 
-void ArchiveWidget::setContext(WOWS_CONTEXT *ctx)
-{
+void ArchiveWidget::setContext(WOWS_CONTEXT *ctx) {
     m_context = ctx;
     if (m_context)
         populateFileTree();
@@ -26,8 +24,7 @@ void ArchiveWidget::setContext(WOWS_CONTEXT *ctx)
     updateStatus(m_context ? "Archive loaded." : "No archive loaded.");
 }
 
-void ArchiveWidget::setupUI()
-{
+void ArchiveWidget::setupUI() {
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
 
     QHBoxLayout *outputDirLayout = new QHBoxLayout();
@@ -50,7 +47,7 @@ void ArchiveWidget::setupUI()
 
     QHBoxLayout *buttonLayout = new QHBoxLayout();
     extractButton = new QPushButton("Extract Selected", this);
-    stopButton    = new QPushButton("Stop", this);
+    stopButton = new QPushButton("Stop", this);
     refreshButton = new QPushButton("Refresh", this);
     stopButton->setEnabled(false);
     buttonLayout->addWidget(extractButton);
@@ -69,21 +66,19 @@ void ArchiveWidget::setupUI()
     mainLayout->addWidget(statusLabel);
 
     outputDirPath->setText(QSettings("wows-tools", "wows-extractor-gui").value("outputDir").toString());
-    connect(outputDirPath,         &QLineEdit::editingFinished,        this, [this]() {
-        QSettings("wows-tools", "wows-extractor-gui").setValue("outputDir", outputDirPath->text());
-    });
-    connect(selectOutputDirButton, &QPushButton::clicked,             this, &ArchiveWidget::onSelectOutputDir);
-    connect(extractButton,         &QPushButton::clicked,             this, &ArchiveWidget::onExtractSelected);
-    connect(stopButton,            &QPushButton::clicked,             this, &ArchiveWidget::onStopExtraction);
-    connect(refreshButton,         &QPushButton::clicked,             this, &ArchiveWidget::onRefreshTree);
-    connect(searchButton,          &QPushButton::clicked,             this, &ArchiveWidget::onSearchFiles);
-    connect(fileTree,              &QTreeWidget::itemExpanded,        this, &ArchiveWidget::onItemExpanded);
-    connect(fileTree,              &QTreeWidget::itemSelectionChanged,this, &ArchiveWidget::onSelectionChanged);
-    connect(fileTree,              &QTreeWidget::itemDoubleClicked,   this, &ArchiveWidget::onItemDoubleClicked);
+    connect(outputDirPath, &QLineEdit::editingFinished, this,
+            [this]() { QSettings("wows-tools", "wows-extractor-gui").setValue("outputDir", outputDirPath->text()); });
+    connect(selectOutputDirButton, &QPushButton::clicked, this, &ArchiveWidget::onSelectOutputDir);
+    connect(extractButton, &QPushButton::clicked, this, &ArchiveWidget::onExtractSelected);
+    connect(stopButton, &QPushButton::clicked, this, &ArchiveWidget::onStopExtraction);
+    connect(refreshButton, &QPushButton::clicked, this, &ArchiveWidget::onRefreshTree);
+    connect(searchButton, &QPushButton::clicked, this, &ArchiveWidget::onSearchFiles);
+    connect(fileTree, &QTreeWidget::itemExpanded, this, &ArchiveWidget::onItemExpanded);
+    connect(fileTree, &QTreeWidget::itemSelectionChanged, this, &ArchiveWidget::onSelectionChanged);
+    connect(fileTree, &QTreeWidget::itemDoubleClicked, this, &ArchiveWidget::onItemDoubleClicked);
 }
 
-void ArchiveWidget::onSelectOutputDir()
-{
+void ArchiveWidget::onSelectOutputDir() {
     QString dir = QFileDialog::getExistingDirectory(this, "Select Output Directory");
     if (!dir.isEmpty()) {
         outputDirPath->setText(dir);
@@ -91,8 +86,7 @@ void ArchiveWidget::onSelectOutputDir()
     }
 }
 
-void ArchiveWidget::onExtractSelected()
-{
+void ArchiveWidget::onExtractSelected() {
     if (m_extracting)
         return;
     if (!m_context) {
@@ -123,8 +117,7 @@ void ArchiveWidget::onExtractSelected()
     extractFileList(allFiles);
 }
 
-void ArchiveWidget::onItemDoubleClicked(QTreeWidgetItem *item, int column)
-{
+void ArchiveWidget::onItemDoubleClicked(QTreeWidgetItem *item, int column) {
     Q_UNUSED(column);
     if (m_extracting)
         return;
@@ -142,8 +135,7 @@ void ArchiveWidget::onItemDoubleClicked(QTreeWidgetItem *item, int column)
     extractFileList(files);
 }
 
-void ArchiveWidget::extractFileList(const QStringList &allFiles)
-{
+void ArchiveWidget::extractFileList(const QStringList &allFiles) {
     QString outDir = outputDirPath->text();
 
     m_stopRequested = false;
@@ -157,9 +149,8 @@ void ArchiveWidget::extractFileList(const QStringList &allFiles)
 
     for (const QString &archivePath : allFiles) {
         if (m_stopRequested) {
-            updateStatus(QString("Stopped — %1 / %2 file(s) extracted.")
-                             .arg(progressBar->value())
-                             .arg(allFiles.size()));
+            updateStatus(
+                QString("Stopped — %1 / %2 file(s) extracted.").arg(progressBar->value()).arg(allFiles.size()));
             break;
         }
 
@@ -169,17 +160,13 @@ void ArchiveWidget::extractFileList(const QStringList &allFiles)
         QByteArray fp = archivePath.toUtf8();
         QByteArray op = outputPath.toUtf8();
 
-        updateStatus(QString("Extracting %1 / %2 — %3")
-                         .arg(progressBar->value() + 1)
-                         .arg(allFiles.size())
-                         .arg(archivePath));
+        updateStatus(
+            QString("Extracting %1 / %2 — %3").arg(progressBar->value() + 1).arg(allFiles.size()).arg(archivePath));
 
         int result = wows_extract_file(m_context, fp.data(), op.data());
         if (result != 0) {
             errors++;
-            updateStatus(QString("Error extracting %1: %2")
-                             .arg(archivePath)
-                             .arg(wows_error_string(result, m_context)));
+            updateStatus(QString("Error extracting %1: %2").arg(archivePath).arg(wows_error_string(result, m_context)));
         }
         progressBar->setValue(progressBar->value() + 1);
         QApplication::processEvents();
@@ -197,13 +184,11 @@ void ArchiveWidget::extractFileList(const QStringList &allFiles)
     }
 }
 
-void ArchiveWidget::onStopExtraction()
-{
+void ArchiveWidget::onStopExtraction() {
     m_stopRequested = true;
 }
 
-void ArchiveWidget::onSelectionChanged()
-{
+void ArchiveWidget::onSelectionChanged() {
     if (!m_context)
         return;
     QList<QTreeWidgetItem *> selectedItems = fileTree->selectedItems();
@@ -221,8 +206,7 @@ void ArchiveWidget::onSelectionChanged()
     updateStatus(QString("%1 file(s) selected.").arg(total));
 }
 
-void ArchiveWidget::collectFilePaths(const QString &path, QStringList &files)
-{
+void ArchiveWidget::collectFilePaths(const QString &path, QStringList &files) {
     char **entries = nullptr;
     int entryCount = 0;
     QByteArray pathBytes = path.toUtf8();
@@ -245,8 +229,7 @@ void ArchiveWidget::collectFilePaths(const QString &path, QStringList &files)
     free(entries);
 }
 
-int ArchiveWidget::countFilesRecursive(const QString &path)
-{
+int ArchiveWidget::countFilesRecursive(const QString &path) {
     int count = 0;
     char **entries = nullptr;
     int entryCount = 0;
@@ -267,16 +250,14 @@ int ArchiveWidget::countFilesRecursive(const QString &path)
     return count;
 }
 
-void ArchiveWidget::onRefreshTree()
-{
+void ArchiveWidget::onRefreshTree() {
     if (m_context) {
         populateFileTree();
         updateStatus("File tree refreshed.");
     }
 }
 
-void ArchiveWidget::onSearchFiles()
-{
+void ArchiveWidget::onSearchFiles() {
     if (!m_context) {
         QMessageBox::warning(this, "Error", "No archive loaded — use the game directory bar above.");
         return;
@@ -293,8 +274,7 @@ void ArchiveWidget::onSearchFiles()
     int result_count = 0;
     char **results = nullptr;
     QByteArray patternBytes = pattern.toUtf8();
-    int ret = wows_search(m_context, patternBytes.data(), WOWS_SEARCH_FULL_PATH,
-                          &result_count, &results);
+    int ret = wows_search(m_context, patternBytes.data(), WOWS_SEARCH_FULL_PATH, &result_count, &results);
     if (ret != 0 || result_count == 0) {
         updateStatus("No matches found.");
         return;
@@ -306,8 +286,7 @@ void ArchiveWidget::onSearchFiles()
     free(results);
 
     // Restore normal tree view if a previous search replaced it
-    if (fileTree->topLevelItemCount() == 0 ||
-        fileTree->topLevelItem(0)->data(0, Qt::UserRole).toString() != "/")
+    if (fileTree->topLevelItemCount() == 0 || fileTree->topLevelItem(0)->data(0, Qt::UserRole).toString() != "/")
         populateFileTree();
 
     QTreeWidgetItem *item = navigateToPath(firstPath);
@@ -321,8 +300,7 @@ void ArchiveWidget::onSearchFiles()
     }
 }
 
-QTreeWidgetItem *ArchiveWidget::navigateToPath(const QString &path)
-{
+QTreeWidgetItem *ArchiveWidget::navigateToPath(const QString &path) {
     if (fileTree->topLevelItemCount() == 0)
         return nullptr;
 
@@ -349,8 +327,7 @@ QTreeWidgetItem *ArchiveWidget::navigateToPath(const QString &path)
     return current;
 }
 
-void ArchiveWidget::populateFileTree()
-{
+void ArchiveWidget::populateFileTree() {
     fileTree->clear();
     QTreeWidgetItem *rootItem = new QTreeWidgetItem(fileTree);
     rootItem->setText(0, "/");
@@ -362,8 +339,7 @@ void ArchiveWidget::populateFileTree()
 }
 
 /* isDir flag is stored in UserRole+1 as bool; placeholder child has empty text */
-void ArchiveWidget::populateDir(const QString &path, QTreeWidgetItem *parent)
-{
+void ArchiveWidget::populateDir(const QString &path, QTreeWidgetItem *parent) {
     int count = 0;
     char **entries = nullptr;
     QByteArray pathBytes = path.toUtf8();
@@ -374,7 +350,11 @@ void ArchiveWidget::populateDir(const QString &path, QTreeWidgetItem *parent)
     }
 
     /* sort: dirs first, then files, each group alphabetically */
-    struct Entry { QString name; QString path; bool isDir; };
+    struct Entry {
+        QString name;
+        QString path;
+        bool isDir;
+    };
     QVector<Entry> items;
     items.reserve(count);
 
@@ -392,14 +372,15 @@ void ArchiveWidget::populateDir(const QString &path, QTreeWidgetItem *parent)
     free(entries);
 
     std::sort(items.begin(), items.end(), [](const Entry &a, const Entry &b) {
-        if (a.isDir != b.isDir) return a.isDir > b.isDir;
+        if (a.isDir != b.isDir)
+            return a.isDir > b.isDir;
         return a.name.toLower() < b.name.toLower();
     });
 
     for (const auto &e : items) {
         QTreeWidgetItem *item = new QTreeWidgetItem(parent);
         item->setText(0, e.name);
-        item->setData(0, Qt::UserRole,     e.path);
+        item->setData(0, Qt::UserRole, e.path);
         item->setData(0, Qt::UserRole + 1, e.isDir);
         item->setIcon(0, QIcon::fromTheme(e.isDir ? "folder" : "text-x-generic"));
         if (e.isDir)
@@ -407,8 +388,7 @@ void ArchiveWidget::populateDir(const QString &path, QTreeWidgetItem *parent)
     }
 }
 
-void ArchiveWidget::onItemExpanded(QTreeWidgetItem *item)
-{
+void ArchiveWidget::onItemExpanded(QTreeWidgetItem *item) {
     if (!item->data(0, Qt::UserRole + 1).toBool())
         return;
     /* loaded when there's exactly one placeholder (empty-text) child */
@@ -418,7 +398,6 @@ void ArchiveWidget::onItemExpanded(QTreeWidgetItem *item)
     populateDir(item->data(0, Qt::UserRole).toString(), item);
 }
 
-void ArchiveWidget::updateStatus(const QString &message)
-{
+void ArchiveWidget::updateStatus(const QString &message) {
     statusLabel->setText(message);
 }

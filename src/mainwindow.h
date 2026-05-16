@@ -13,29 +13,28 @@ extern "C" {
 class ArchiveWidget;
 class ShipViewerWidget;
 
-class MainWindow : public QMainWindow
-{
+class MainWindow : public QMainWindow {
     Q_OBJECT
-public:
+  public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
-signals:
+  signals:
     void gameDataLoaded();
 
-private slots:
+  private slots:
     void onBrowseGameDir();
     void onLoadGameDir();
 
-private:
+  private:
     /* global game dir bar */
-    QLineEdit    *gameDirEdit;
-    QPushButton  *browseButton;
-    QPushButton  *loadButton;
-    QLabel       *loadStatus;
+    QLineEdit *gameDirEdit;
+    QPushButton *browseButton;
+    QPushButton *loadButton;
+    QLabel *loadStatus;
 
-    QTabWidget       *tabs;
-    ArchiveWidget    *archiveWidget;
+    QTabWidget *tabs;
+    ArchiveWidget *archiveWidget;
     ShipViewerWidget *shipViewerWidget;
 
     WOWS_CONTEXT *m_context;

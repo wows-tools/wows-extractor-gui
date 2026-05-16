@@ -11,17 +11,18 @@ extern "C" {
 #include "wows-depack.h"
 }
 
-class ArchiveWidget : public QWidget
-{
+class ArchiveWidget : public QWidget {
     Q_OBJECT
 
-public:
+  public:
     explicit ArchiveWidget(QWidget *parent = nullptr);
 
-    WOWS_CONTEXT *context() const { return m_context; }
+    WOWS_CONTEXT *context() const {
+        return m_context;
+    }
     void setContext(WOWS_CONTEXT *ctx);
 
-private slots:
+  private slots:
     void onSelectOutputDir();
     void onExtractSelected();
     void onStopExtraction();
@@ -31,20 +32,20 @@ private slots:
     void onItemExpanded(QTreeWidgetItem *item);
     void onItemDoubleClicked(QTreeWidgetItem *item, int column);
 
-private:
+  private:
     WOWS_CONTEXT *m_context;
-    bool          m_stopRequested;
-    bool          m_extracting;
-    QTreeWidget  *fileTree;
-    QPushButton  *selectOutputDirButton;
-    QPushButton  *extractButton;
-    QPushButton  *stopButton;
-    QPushButton  *refreshButton;
-    QPushButton  *searchButton;
-    QLineEdit    *outputDirPath;
-    QLineEdit    *searchPattern;
+    bool m_stopRequested;
+    bool m_extracting;
+    QTreeWidget *fileTree;
+    QPushButton *selectOutputDirButton;
+    QPushButton *extractButton;
+    QPushButton *stopButton;
+    QPushButton *refreshButton;
+    QPushButton *searchButton;
+    QLineEdit *outputDirPath;
+    QLineEdit *searchPattern;
     QProgressBar *progressBar;
-    QLabel       *statusLabel;
+    QLabel *statusLabel;
 
     void setupUI();
     void populateFileTree();
@@ -52,6 +53,6 @@ private:
     void collectFilePaths(const QString &path, QStringList &files);
     void extractFileList(const QStringList &files);
     void updateStatus(const QString &message);
-    int  countFilesRecursive(const QString &path);
+    int countFilesRecursive(const QString &path);
     QTreeWidgetItem *navigateToPath(const QString &path);
 };

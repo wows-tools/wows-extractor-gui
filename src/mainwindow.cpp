@@ -10,9 +10,7 @@
 #include <QWidget>
 #include <QTimer>
 
-MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent), m_context(nullptr)
-{
+MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), m_context(nullptr) {
     setupUI();
 
     /* restore last-used game dir — defer so the window renders before blocking load */
@@ -30,13 +28,11 @@ MainWindow::MainWindow(QWidget *parent)
     }
 }
 
-MainWindow::~MainWindow()
-{
+MainWindow::~MainWindow() {
     clearContext();
 }
 
-void MainWindow::setupUI()
-{
+void MainWindow::setupUI() {
     setWindowTitle(QStringLiteral("WoWs Extractor"));
     resize(1280, 800);
 
@@ -54,9 +50,9 @@ void MainWindow::setupUI()
     dirBar->addWidget(gameDirEdit, 1);
     browseButton = new QPushButton("Browse…");
     browseButton->setFixedWidth(80);
-    loadButton   = new QPushButton("Load");
+    loadButton = new QPushButton("Load");
     loadButton->setFixedWidth(60);
-    loadStatus   = new QLabel("Not loaded");
+    loadStatus = new QLabel("Not loaded");
     loadStatus->setStyleSheet("color: #888;");
     dirBar->addWidget(browseButton);
     dirBar->addWidget(loadButton);
@@ -65,23 +61,21 @@ void MainWindow::setupUI()
 
     /* ── tabs ── */
     tabs = new QTabWidget(central);
-    archiveWidget    = new ArchiveWidget(this);
+    archiveWidget = new ArchiveWidget(this);
     shipViewerWidget = new ShipViewerWidget(this);
     tabs->addTab(shipViewerWidget, "Ship Viewer");
-    tabs->addTab(archiveWidget,    "Resource Explorer");
+    tabs->addTab(archiveWidget, "Resource Explorer");
     vlay->addWidget(tabs, 1);
 
     setCentralWidget(central);
 
     connect(browseButton, &QPushButton::clicked, this, &MainWindow::onBrowseGameDir);
-    connect(loadButton,   &QPushButton::clicked, this, &MainWindow::onLoadGameDir);
-    connect(gameDirEdit,  &QLineEdit::returnPressed, this, &MainWindow::onLoadGameDir);
+    connect(loadButton, &QPushButton::clicked, this, &MainWindow::onLoadGameDir);
+    connect(gameDirEdit, &QLineEdit::returnPressed, this, &MainWindow::onLoadGameDir);
 }
 
-void MainWindow::onBrowseGameDir()
-{
-    QString dir = QFileDialog::getExistingDirectory(
-        this, "Select World of Warships Directory", gameDirEdit->text());
+void MainWindow::onBrowseGameDir() {
+    QString dir = QFileDialog::getExistingDirectory(this, "Select World of Warships Directory", gameDirEdit->text());
     if (!dir.isEmpty()) {
         gameDirEdit->setText(dir);
         onLoadGameDir();
@@ -89,8 +83,7 @@ void MainWindow::onBrowseGameDir()
 }
 
 /* Returns the path to the idx dir of the highest-numbered build, or "" on failure. */
-QString MainWindow::findLatestIdxDir(const QString &gameDir)
-{
+QString MainWindow::findLatestIdxDir(const QString &gameDir) {
     QDir binDir(gameDir + "/bin");
     if (!binDir.exists())
         return {};
@@ -112,8 +105,7 @@ QString MainWindow::findLatestIdxDir(const QString &gameDir)
     return idxDir;
 }
 
-void MainWindow::onLoadGameDir()
-{
+void MainWindow::onLoadGameDir() {
     QString gameDir = gameDirEdit->text().trimmed();
     if (gameDir.isEmpty())
         return;
@@ -158,10 +150,9 @@ void MainWindow::onLoadGameDir()
     archiveWidget->setContext(m_context);
     shipViewerWidget->setGameDirAndContext(gameDir, m_context);
 
-    loadStatus->setText(QString("Loaded (build %1)")
-                            .arg(QDir(idxDir).dirName() == "idx"
-                                     ? QDir(idxDir).absolutePath().section('/', -2, -2)
-                                     : "?"));
+    loadStatus->setText(
+        QString("Loaded (build %1)")
+            .arg(QDir(idxDir).dirName() == "idx" ? QDir(idxDir).absolutePath().section('/', -2, -2) : "?"));
     loadStatus->setStyleSheet("color: green;");
 
     /* persist for next launch */
@@ -170,8 +161,7 @@ void MainWindow::onLoadGameDir()
     finish();
 }
 
-void MainWindow::clearContext()
-{
+void MainWindow::clearContext() {
     if (m_context) {
         wows_free_context(m_context);
         m_context = nullptr;
