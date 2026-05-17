@@ -28,7 +28,7 @@ if(MSVC)
 endif()
 
 # ── Qt ──────────────────────────────────────────────────────────────
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets Quick QuickWidgets Quick3D Concurrent)
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets Quick QuickWidgets Quick3D)
 
 # ── System libraries ────────────────────────────────────────────────
 find_package(ZLIB REQUIRED)
@@ -210,7 +210,6 @@ target_link_libraries(wows-extractor PRIVATE
     Qt6::Widgets
     Qt6::Quick
     Qt6::QuickWidgets
-    Qt6::Concurrent
     Qt6::Quick3D
     wows-depack-static
     wows-geometry-static

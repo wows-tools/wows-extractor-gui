@@ -6,9 +6,6 @@
 #include <QLineEdit>
 #include <QLabel>
 #include <QProgressBar>
-#include <QFutureWatcher>
-#include <QTimer>
-#include <QPair>
 
 extern "C" {
 #include "wows-depack.h"
@@ -34,7 +31,6 @@ class ArchiveWidget : public QWidget {
     void onSearchFiles();
     void onItemExpanded(QTreeWidgetItem *item);
     void onItemDoubleClicked(QTreeWidgetItem *item, int column);
-    void startCountAsync();
 
   private:
     WOWS_CONTEXT *m_context;
@@ -51,16 +47,12 @@ class ArchiveWidget : public QWidget {
     QProgressBar *progressBar;
     QLabel *statusLabel;
 
-    QTimer                      *m_countTimer;
-    QFutureWatcher<int>         *m_countWatcher;
-    QList<QPair<QString, bool>>  m_pendingCount;
-
     void setupUI();
     void populateFileTree();
     void populateDir(const QString &path, QTreeWidgetItem *parent);
     void collectFilePaths(const QString &path, QStringList &files);
     void extractFileList(const QStringList &files);
     void updateStatus(const QString &message);
-    static int countFilesRecursive(WOWS_CONTEXT *ctx, const QString &path);
+    int countFilesRecursive(const QString &path);
     QTreeWidgetItem *navigateToPath(const QString &path);
 };
