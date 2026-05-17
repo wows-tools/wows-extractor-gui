@@ -10,6 +10,15 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+# MSVC multi-config generators append Release/Debug subdirs unless overridden.
+if(MSVC)
+    foreach(_cfg IN ITEMS Release Debug RelWithDebInfo MinSizeRel)
+        string(TOUPPER ${_cfg} _cfg_upper)
+        set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${_cfg_upper} ${CMAKE_BINARY_DIR}/bin)
+        set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${_cfg_upper} ${CMAKE_BINARY_DIR}/lib)
+        set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${_cfg_upper} ${CMAKE_BINARY_DIR}/lib)
+    endforeach()
+endif()
 
 # ── MSVC global flags ────────────────────────────────────────────────
 if(MSVC)

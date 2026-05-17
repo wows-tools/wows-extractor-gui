@@ -92,3 +92,10 @@ inc/html/
 inc/latex/
 latex/
 docs/doxygen-awesome-css
+
+*.log
+build/
+*.wixobj
+vcpkg_installed/
+*.msi
+*.wixpdb
