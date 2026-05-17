@@ -98,5 +98,6 @@ build/
 *.wixobj
 vcpkg_installed/
 *.msi
+wows-extractor
 *.wixpdb
 License.rtf
