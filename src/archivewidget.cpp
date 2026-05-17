@@ -12,12 +12,6 @@
 #include <QtConcurrent>
 
 ArchiveWidget::ArchiveWidget(QWidget *parent)
-<<<<<<< Updated upstream
-    : QWidget(parent), m_context(nullptr), m_stopRequested(false), m_extracting(false) {
-||||||| Stash base
-    : QWidget(parent), m_context(nullptr), m_stopRequested(false), m_extracting(false)
-{
-=======
     : QWidget(parent), m_context(nullptr), m_stopRequested(false), m_extracting(false)
 {
     m_countTimer = new QTimer(this);
@@ -31,23 +25,15 @@ ArchiveWidget::ArchiveWidget(QWidget *parent)
             updateStatus(QString("%1 file(s) selected.").arg(m_countWatcher->result()));
     });
 
->>>>>>> Stashed changes
     setupUI();
 }
 
-<<<<<<< Updated upstream
-void ArchiveWidget::setContext(WOWS_CONTEXT *ctx) {
-||||||| Stash base
-void ArchiveWidget::setContext(WOWS_CONTEXT *ctx)
-{
-=======
 void ArchiveWidget::setContext(WOWS_CONTEXT *ctx)
 {
     m_countTimer->stop();
     if (m_countWatcher->isRunning())
         m_countWatcher->waitForFinished();
 
->>>>>>> Stashed changes
     m_context = ctx;
     if (m_context)
         populateFileTree();
@@ -274,15 +260,8 @@ void ArchiveWidget::collectFilePaths(const QString &path, QStringList &files) {
     free(entries);
 }
 
-<<<<<<< Updated upstream
-int ArchiveWidget::countFilesRecursive(const QString &path) {
-||||||| Stash base
-int ArchiveWidget::countFilesRecursive(const QString &path)
-{
-=======
 int ArchiveWidget::countFilesRecursive(WOWS_CONTEXT *ctx, const QString &path)
 {
->>>>>>> Stashed changes
     int count = 0;
     char **entries = nullptr;
     int entryCount = 0;

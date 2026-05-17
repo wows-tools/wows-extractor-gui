@@ -61,12 +61,6 @@ class ArchiveWidget : public QWidget {
     void collectFilePaths(const QString &path, QStringList &files);
     void extractFileList(const QStringList &files);
     void updateStatus(const QString &message);
-<<<<<<< Updated upstream
-    int countFilesRecursive(const QString &path);
-||||||| Stash base
-    int  countFilesRecursive(const QString &path);
-=======
     static int countFilesRecursive(WOWS_CONTEXT *ctx, const QString &path);
->>>>>>> Stashed changes
     QTreeWidgetItem *navigateToPath(const QString &path);
 };
