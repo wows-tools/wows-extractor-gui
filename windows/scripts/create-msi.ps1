@@ -24,7 +24,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
+$RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 Set-Location $RepoRoot
 
 function Find-WixDir {
@@ -60,7 +60,7 @@ function Find-VcVars64 {
 }
 
 function Resolve-QtBin {
-    $candidates = @($env:QT_ROOT, 'C:\Qt\6.7.3\msvc2019_64') | Where-Object { $_ }
+    $candidates = @($env:QT_ROOT, $env:QT_ROOT_DIR, 'C:\Qt\6.7.3\msvc2019_64') | Where-Object { $_ }
     foreach ($c in $candidates) {
         $bin = Join-Path $c 'bin'
         if (Test-Path (Join-Path $bin 'windeployqt.exe')) { return (Resolve-Path $bin).Path }
@@ -127,7 +127,16 @@ Write-Host "Bundled: $($pyDll.Name)"
 Remove-Item -Force (Join-Path $RepoRoot 'AppFiles.wxs'),
     (Join-Path $RepoRoot 'AppFiles.wixobj'),
     (Join-Path $RepoRoot 'installer.wixobj'),
+    (Join-Path $RepoRoot 'License.rtf'),
     $msiOut -ErrorAction SilentlyContinue
+
+Write-Host "==> Convert LICENSE to RTF"
+Add-Type -AssemblyName System.Windows.Forms
+$rtb = New-Object System.Windows.Forms.RichTextBox
+$rtb.Font = New-Object System.Drawing.Font('Courier New', 8)
+$rtb.Text = (Get-Content (Join-Path $RepoRoot 'LICENSE') -Raw -Encoding UTF8).Replace("`r`n", "`n").Replace("`r", "`n")
+$licenseRtf = Join-Path $RepoRoot 'License.rtf'
+$rtb.SaveFile($licenseRtf, [System.Windows.Forms.RichTextBoxStreamType]::RichText)
 
 Write-Host "==> heat.exe"
 & (Join-Path $WixDir 'heat.exe') dir $stagingBin -nologo -gg -suid `
@@ -135,14 +144,15 @@ Write-Host "==> heat.exe"
     -out (Join-Path $RepoRoot 'AppFiles.wxs')
 if ($LASTEXITCODE -ne 0) { throw "heat.exe failed (exit $LASTEXITCODE)" }
 
-$icon = Join-Path $RepoRoot 'packaging\windows\wows-extractor.ico'
+$icon = Join-Path $RepoRoot 'windows\packaging\wows-extractor.ico'
 Write-Host "==> candle.exe"
 & (Join-Path $WixDir 'candle.exe') -nologo -arch x64 -ext WixUIExtension `
     "-dProductVersion=$version" `
     "-dSourceDir=$stagingBin" `
     "-dIconFile=$icon" `
+    "-dLicenseRtf=$licenseRtf" `
     (Join-Path $RepoRoot 'AppFiles.wxs') `
-    (Join-Path $RepoRoot 'packaging\windows\installer.wxs') `
+    (Join-Path $RepoRoot 'windows\packaging\installer.wxs') `
     -out "$RepoRoot\"
 if ($LASTEXITCODE -ne 0) { throw "candle.exe failed (exit $LASTEXITCODE)" }
 

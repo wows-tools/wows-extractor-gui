@@ -124,7 +124,7 @@ cmake --build build --config Release --parallel
 Or use the helper script (finds Qt/Python when installed in default locations):
 
 ```powershell
-.\scripts\build-windows.ps1 -QtRoot C:\Qt\6.7.3\msvc2019_64
+.\windows\scripts\build-windows.ps1 -QtRoot C:\Qt\6.7.3\msvc2019_64
 ```
 
 The executable is `build\bin\wows-extractor.exe`.
@@ -136,7 +136,7 @@ To run from the build tree you still need Qt DLLs and QML modules on `PATH` (or 
 Requires a successful build and [WiX Toolset 3.x](https://wixtoolset.org/) (`heat.exe`, `candle.exe`, `light.exe`). If the MSI installer is not installed system-wide, extract [wix314-binaries.zip](https://github.com/wixtoolset/wix3/releases/download/wix3141rtm/wix314-binaries.zip) and set `WIX314` to that folder.
 
 ```powershell
-.\scripts\create-msi.ps1 -WixDir C:\path\to\wix314
+.\windows\scripts\create-msi.ps1 -WixDir C:\path\to\wix314
 ```
 
 Output: `wows-extractor-<version>-win64.msi` in the repository root (installs to `Program Files\WoWS Extractor` with a Start Menu shortcut).

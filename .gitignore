@@ -99,3 +99,4 @@ build/
 vcpkg_installed/
 *.msi
 *.wixpdb
+License.rtf

@@ -9,13 +9,45 @@
 #include <QSettings>
 #include <QDir>
 #include <QIcon>
+#include <QtConcurrent>
 
 ArchiveWidget::ArchiveWidget(QWidget *parent)
+<<<<<<< Updated upstream
     : QWidget(parent), m_context(nullptr), m_stopRequested(false), m_extracting(false) {
+||||||| Stash base
+    : QWidget(parent), m_context(nullptr), m_stopRequested(false), m_extracting(false)
+{
+=======
+    : QWidget(parent), m_context(nullptr), m_stopRequested(false), m_extracting(false)
+{
+    m_countTimer = new QTimer(this);
+    m_countTimer->setSingleShot(true);
+    m_countTimer->setInterval(150);
+    connect(m_countTimer, &QTimer::timeout, this, &ArchiveWidget::startCountAsync);
+
+    m_countWatcher = new QFutureWatcher<int>(this);
+    connect(m_countWatcher, &QFutureWatcher<int>::finished, this, [this]() {
+        if (!m_countWatcher->isCanceled())
+            updateStatus(QString("%1 file(s) selected.").arg(m_countWatcher->result()));
+    });
+
+>>>>>>> Stashed changes
     setupUI();
 }
 
+<<<<<<< Updated upstream
 void ArchiveWidget::setContext(WOWS_CONTEXT *ctx) {
+||||||| Stash base
+void ArchiveWidget::setContext(WOWS_CONTEXT *ctx)
+{
+=======
+void ArchiveWidget::setContext(WOWS_CONTEXT *ctx)
+{
+    m_countTimer->stop();
+    if (m_countWatcher->isRunning())
+        m_countWatcher->waitForFinished();
+
+>>>>>>> Stashed changes
     m_context = ctx;
     if (m_context)
         populateFileTree();
@@ -191,19 +223,34 @@ void ArchiveWidget::onStopExtraction() {
 void ArchiveWidget::onSelectionChanged() {
     if (!m_context)
         return;
-    QList<QTreeWidgetItem *> selectedItems = fileTree->selectedItems();
-    if (selectedItems.isEmpty()) {
+    QList<QTreeWidgetItem *> sel = fileTree->selectedItems();
+    if (sel.isEmpty()) {
+        m_countTimer->stop();
         updateStatus("No files selected.");
         return;
     }
-    int total = 0;
-    for (QTreeWidgetItem *item : selectedItems) {
-        if (item->data(0, Qt::UserRole + 1).toBool())
-            total += countFilesRecursive(item->data(0, Qt::UserRole).toString());
-        else
-            total++;
+    m_pendingCount.clear();
+    for (QTreeWidgetItem *item : sel)
+        m_pendingCount.append({item->data(0, Qt::UserRole).toString(),
+                               item->data(0, Qt::UserRole + 1).toBool()});
+    updateStatus("Counting\xe2\x80\xa6"); // "Counting…"
+    m_countTimer->start();
+}
+
+void ArchiveWidget::startCountAsync()
+{
+    if (m_countWatcher->isRunning()) {
+        m_countTimer->start(50);
+        return;
     }
-    updateStatus(QString("%1 file(s) selected.").arg(total));
+    WOWS_CONTEXT *ctx = m_context;
+    QList<QPair<QString, bool>> items = m_pendingCount;
+    m_countWatcher->setFuture(QtConcurrent::run([ctx, items]() -> int {
+        int total = 0;
+        for (const auto &item : items)
+            total += item.second ? countFilesRecursive(ctx, item.first) : 1;
+        return total;
+    }));
 }
 
 void ArchiveWidget::collectFilePaths(const QString &path, QStringList &files) {
@@ -214,37 +261,44 @@ void ArchiveWidget::collectFilePaths(const QString &path, QStringList &files) {
         return;
 
     for (int i = 0; i < entryCount; i++) {
-        QString name = QString::fromUtf8(entries[i]);
-        QString full = (path == "/") ? "/" + name : path + "/" + name;
-        WOWS_STAT st{};
-        QByteArray fp = full.toUtf8();
-        if (wows_stat_path(m_context, fp.data(), &st) == 0) {
-            if (st.type == 0)
-                collectFilePaths(full, files);
-            else
-                files.append(full);
-        }
+        QString entry = QString::fromUtf8(entries[i]);
         free(entries[i]);
+        bool isDir = entry.endsWith('/');
+        if (isDir) entry.chop(1);
+        QString full = (path == "/") ? "/" + entry : path + "/" + entry;
+        if (isDir)
+            collectFilePaths(full, files);
+        else
+            files.append(full);
     }
     free(entries);
 }
 
+<<<<<<< Updated upstream
 int ArchiveWidget::countFilesRecursive(const QString &path) {
+||||||| Stash base
+int ArchiveWidget::countFilesRecursive(const QString &path)
+{
+=======
+int ArchiveWidget::countFilesRecursive(WOWS_CONTEXT *ctx, const QString &path)
+{
+>>>>>>> Stashed changes
     int count = 0;
     char **entries = nullptr;
     int entryCount = 0;
     QByteArray pathBytes = path.toUtf8();
-    if (wows_readdir(m_context, pathBytes.data(), &entryCount, &entries) != 0)
+    if (wows_readdir(ctx, pathBytes.data(), &entryCount, &entries) != 0)
         return 0;
 
     for (int i = 0; i < entryCount; i++) {
-        QString name = QString::fromUtf8(entries[i]);
-        QString full = (path == "/") ? "/" + name : path + "/" + name;
-        WOWS_STAT st{};
-        QByteArray fp = full.toUtf8();
-        if (wows_stat_path(m_context, fp.data(), &st) == 0)
-            count += (st.type == 0) ? countFilesRecursive(full) : 1;
+        QString entry = QString::fromUtf8(entries[i]);
         free(entries[i]);
+        if (entry.endsWith('/')) {
+            entry.chop(1);
+            count += countFilesRecursive(ctx, (path == "/") ? "/" + entry : path + "/" + entry);
+        } else {
+            count++;
+        }
     }
     free(entries);
     return count;
@@ -359,15 +413,12 @@ void ArchiveWidget::populateDir(const QString &path, QTreeWidgetItem *parent) {
     items.reserve(count);
 
     for (int i = 0; i < count; i++) {
-        QString name = QString::fromUtf8(entries[i]);
-        QString full = (path == "/") ? "/" + name : path + "/" + name;
-        WOWS_STAT st{};
-        QByteArray fp = full.toUtf8();
-        bool isDir = false;
-        if (wows_stat_path(m_context, fp.data(), &st) == 0)
-            isDir = (st.type == 0); /* WOWS_INODE_TYPE_DIR == 0 */
-        items.push_back({name, full, isDir});
+        QString entry = QString::fromUtf8(entries[i]);
         free(entries[i]);
+        bool isDir = entry.endsWith('/');
+        if (isDir) entry.chop(1);
+        QString full = (path == "/") ? "/" + entry : path + "/" + entry;
+        items.push_back({entry, full, isDir});
     }
     free(entries);
 

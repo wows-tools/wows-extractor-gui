@@ -7,14 +7,12 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 # MSVC multi-config generators append Release/Debug subdirs unless overridden.
 if(MSVC)
     foreach(_cfg IN ITEMS Release Debug RelWithDebInfo MinSizeRel)
         string(TOUPPER ${_cfg} _cfg_upper)
-        set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${_cfg_upper} ${CMAKE_BINARY_DIR}/bin)
         set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${_cfg_upper} ${CMAKE_BINARY_DIR}/lib)
         set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${_cfg_upper} ${CMAKE_BINARY_DIR}/lib)
     endforeach()
@@ -30,7 +28,7 @@ if(MSVC)
 endif()
 
 # ── Qt ──────────────────────────────────────────────────────────────
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets Quick QuickWidgets Quick3D)
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets Quick QuickWidgets Quick3D Concurrent)
 
 # ── System libraries ────────────────────────────────────────────────
 find_package(ZLIB REQUIRED)
@@ -132,7 +130,7 @@ if(MSVC)
     # Shadow headers provide unistd.h, libgen.h, endian.h, linux/limits.h
     # They must appear before system include paths so the compiler finds
     # our shims when vendored C code does #include <unistd.h> etc.
-    set(WIN32_COMPAT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/compat/win32)
+    set(WIN32_COMPAT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/windows/compat)
     foreach(tgt wows-depack-static wows-geometry-static)
         # WIN32_COMPAT_DIR alone is enough: <linux/limits.h> resolves via the
         # linux/ subdirectory inside it. Adding WIN32_COMPAT_DIR/linux as a
@@ -161,13 +159,13 @@ if(MSVC)
     # C++ translation unit in wows-geometry-static so stitch.cpp picks it up
     # without modifying the submodule source.
     target_compile_options(wows-geometry-static PRIVATE
-        /FI "${CMAKE_CURRENT_SOURCE_DIR}/compat/win32/fmemopen.h")
+        /FI "${CMAKE_CURRENT_SOURCE_DIR}/windows/compat/fmemopen.h")
 
     # open_memstream (POSIX, unavailable on MSVC):
     #
     # For wows-depack-static (pure C files): /FI force-include works reliably.
     target_compile_options(wows-depack-static PRIVATE
-        /FI "${CMAKE_CURRENT_SOURCE_DIR}/compat/win32/open_memstream.h")
+        /FI "${CMAKE_CURRENT_SOURCE_DIR}/windows/compat/open_memstream.h")
     #
     # For wows-geometry-static (C++ files that include <Python.h>): Python.h
     # interferes with the /FI mechanism.  Instead, generate a thin wrapper for
@@ -177,7 +175,7 @@ if(MSVC)
     set(_GEN_INC "${CMAKE_CURRENT_BINARY_DIR}/compat_gen")
     file(WRITE "${_GEN_INC}/wows-depack.h"
         "#pragma once\n"
-        "#include \"${CMAKE_CURRENT_SOURCE_DIR}/compat/win32/open_memstream.h\"\n"
+        "#include \"${CMAKE_CURRENT_SOURCE_DIR}/windows/compat/open_memstream.h\"\n"
         "#include \"${WOWS_DEPACK_DIR}/inc/wows-depack.h\"\n"
     )
     target_include_directories(wows-geometry-static BEFORE PUBLIC "${_GEN_INC}")
@@ -195,7 +193,7 @@ set(UI_SOURCES
     src/resources.qrc
 )
 if(MSVC)
-    list(APPEND UI_SOURCES packaging/windows/app.rc)
+    list(APPEND UI_SOURCES windows/packaging/app.rc)
 endif()
 
 add_executable(wows-extractor ${UI_SOURCES})
@@ -212,6 +210,7 @@ target_link_libraries(wows-extractor PRIVATE
     Qt6::Widgets
     Qt6::Quick
     Qt6::QuickWidgets
+    Qt6::Concurrent
     Qt6::Quick3D
     wows-depack-static
     wows-geometry-static

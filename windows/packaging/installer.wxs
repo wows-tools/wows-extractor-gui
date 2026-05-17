@@ -28,6 +28,8 @@
     <Icon Id="AppIcon.ico" SourceFile="$(var.IconFile)" />
     <Property Id="ARPPRODUCTICON" Value="AppIcon.ico" />
 
+    <WixVariable Id="WixUILicenseRtf" Value="$(var.LicenseRtf)" />
+
     <!-- ── Directory layout ───────────────────────────────────────── -->
     <Directory Id="TARGETDIR" Name="SourceDir">
       <Directory Id="ProgramFiles64Folder">

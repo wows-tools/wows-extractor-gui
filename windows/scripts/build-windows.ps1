@@ -28,7 +28,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
+$RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 Set-Location $RepoRoot
 
 function Find-VcVars64 {
@@ -64,6 +64,7 @@ function Resolve-QtRoot {
     if ($Hint -and (Test-Path (Join-Path $Hint 'lib\cmake\Qt6'))) { return (Resolve-Path $Hint).Path }
     $candidates = @(
         $env:QT_ROOT,
+        $env:QT_ROOT_DIR,
         'C:\Qt\6.7.3\msvc2019_64',
         "$env:USERPROFILE\Qt\6.7.3\msvc2019_64"
     ) | Where-Object { $_ }
@@ -77,7 +78,7 @@ Qt 6 (MSVC 64-bit) not found. Install Qt 6.7.x with modules qtquick3d, qtshadert
   python -m aqt install-qt windows desktop 6.7.3 win64_msvc2019_64 `
     -m qtquick3d qtshadertools qtquicktimeline -O C:\Qt
 
-  .\scripts\build-windows.ps1 -QtRoot C:\Qt\6.7.3\msvc2019_64
+  .\windows\scripts\build-windows.ps1 -QtRoot C:\Qt\6.7.3\msvc2019_64
 '@
 }
 
